@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Diário do Personal — Gestão & Reposições</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .snap-x-mandatory { scroll-snap-type: x mandatory; }
+    .snap-start { scroll-snap-align: start; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col max-w-md mx-auto bg-slate-900 border-x border-slate-800 shadow-2xl">
+
+  <!-- Top Header -->
+  <header class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+    <div>
+      <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Danilo Luiz • Personal</span>
+      <h1 class="text-lg font-extrabold tracking-tight text-white">Diário do Personal</h1>
+    </div>
+    <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+      <button id="btnViewPersonal" onclick="switchRole('personal')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-emerald-500 text-slate-950">Personal</button>
+      <button id="btnViewAluno" onclick="switchRole('aluno')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white">Visão Aluno</button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main id="appContent" class="flex-1 p-4 space-y-5 pb-24"></main>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-800 border border-slate-700 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium flex items-center gap-2">
+    <span id="toastIcon">✅</span>
+    <span id="toastMsg">Atualizado!</span>
+  </div>
+
+  <!-- Modal Agendar Reposição -->
+  <div id="modalReposicao" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-bold text-white">Horários Liberados para Reposição</h3>
+          <p id="modalSub" class="text-xs text-slate-400">Vagas abertas por aviso prévio de outros alunos</p>
+        </div>
+        <button onclick="closeReposicaoModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">✕</button>
+      </div>
+      <div id="slotsDisponiveisList" class="space-y-2 max-h-64 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // ESTADO & PERSISTÊNCIA (LOCALSTORAGE COM CHAVE VERSIONADA SEGURA)
+    // =========================================================================
+    const STORAGE_KEY = 'diario_personal_v2_data';
+
+    function getWeekStart(date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - d.getDay()); // Domingo = 0
+      return d;
+    }
+
+    function formatISO(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    const TODAY = new Date();
+    TODAY.setHours(0, 0, 0, 0);
+    const CURRENT_SUNDAY = getWeekStart(TODAY);
+
+    // Dados iniciais demonstrativos (preserva dados existentes se já houver no localStorage)
+    function buildDefaultState() {
+      const dSeg = formatISO(addDays(CURRENT_SUNDAY, 1));
+      const dQua = formatISO(addDays(CURRENT_SUNDAY, 3));
+      const dSex = formatISO(addDays(CURRENT_SUNDAY, 5));
+      const dNextSeg = formatISO(addDays(CURRENT_SUNDAY, 8));
+      const dNextQua = formatISO(addDays(CURRENT_SUNDAY, 10));
+
+      return {
+        currentRole: 'aluno',
+        selectedStudentId: 'st1',
+        students: [
+          { id: 'st1', name: 'Carlos Eduardo (44a)', plan: '3x/sem • Método Antibarriga', phone: '5517999990001' },
+          { id: 'st2', name: 'Roberto Almeida (48a)', plan: '3x/sem • Hipertrofia', phone: '5517999990002' },
+          { id: 'st3', name: 'Marcos Vinícius (41a)', plan: '2x/sem • Emagrecimento', phone: '5517999990003' }
+        ],
+        // status: 'agendado' | 'presenca' | 'aviso_falta' | 'falta_sem_aviso' | 'reposicao_agendada' | 'reposicao_realizada'
+        sessions: [
+          { id: 's1', studentId: 'st1', date: dSeg, time: '07:00', status: 'presenca', releasedSlot: false, originAbsenceId: null },
+          { id: 's2', studentId: 'st1', date: dQua, time: '07:00', status: 'aviso_falta', releasedSlot: true, originAbsenceId: null },
+          { id: 's3', studentId: 'st1', date: dSex, time: '07:00', status: 'agendado', releasedSlot: false, originAbsenceId: null },
+          { id: 's4', studentId: 'st1', date: dNextSeg, time: '07:00', status: 'agendado', releasedSlot: false, originAbsenceId: null },
+          { id: 's5', studentId: 'st2', date: dSex, time: '08:00', status: 'aviso_falta', releasedSlot: true, originAbsenceId: null },
+          { id: 's6', studentId: 'st2', date: dNextQua, time: '08:00', status: 'aviso_falta', releasedSlot: true, originAbsenceId: null },
+          { id: 's7', studentId: 'st3', date: dSeg, time: '09:00', status: 'falta_sem_aviso', releasedSlot: false, originAbsenceId: null }
+        ]
+      };
+    }
+
+    let state = (() => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return buildDefaultState();
+    })();
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function showToast(msg, icon = '✅') {
+      const t = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').textContent = icon;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 2800);
+    }
+
+    // =========================================================================
+    // REGRAS DE NEGÓCIO: AVISO DE FALTA LIBERA VAGA + MARCAÇÕES DO PERSONAL
+    // =========================================================================
+
+    // 1. Avisar falta com antecedência -> Fica AMARELO e LIBERA o horário naquele dia
+    function registrarAvisoFalta(sessionId) {
+      const s = state.sessions.find(x => x.id === sessionId);
+      if (!s) return;
+      s.status = 'aviso_falta';
+      s.releasedSlot = true; // Libera imediatamente a vaga para reposição de outro aluno
+      saveState();
+      render();
+      showToast('Falta avisada! Horário liberado para reposição.', '🟡');
+    }
+
+    // 2. Personal marca Presença (VERDE) ou Falta sem aviso (VERMELHO)
+    function marcarStatusPersonal(sessionId, novoStatus) {
+      const s = state.sessions.find(x => x.id === sessionId);
+      if (!s) return;
+      s.status = novoStatus;
+      // Se era aviso_falta e o personal mudou para presença ou falta sem aviso, fecha a vaga se ninguém pegou
+      if (novoStatus !== 'aviso_falta') {
+        s.releasedSlot = false;
+      }
+      saveState();
+      render();
+      const label = novoStatus === 'presenca' ? 'Presença confirmada (Verde)' :
+                    novoStatus === 'falta_sem_aviso' ? 'Falta sem aviso (Vermelho)' :
+                    novoStatus === 'reposicao_realizada' ? 'Reposição concluída (Verde)' : 'Status atualizado';
+      showToast(label, novoStatus === 'falta_sem_aviso' ? '🔴' : '🟢');
+    }
+
+    // 3. Aluno agenda reposição em uma vaga liberada por aviso prévio de outro aluno
+    let pendingAbsenceToMakeupId = null;
+
+    function openReposicaoModal(absenceSessionId) {
+      pendingAbsenceToMakeupId = absenceSessionId;
+      const studentId = state.selectedStudentId;
+      const todayISO = formatISO(TODAY);
+
+      // Busca slots liberados por aviso prévio (releasedSlot === true), de outros alunos, a partir de hoje
+      const vagasAbertas = state.sessions.filter(s =>
+        s.releasedSlot === true &&
+        s.studentId !== studentId &&
+        s.date >= todayISO
+      );
+
+      const listEl = document.getElementById('slotsDisponiveisList');
+      if (vagasAbertas.length === 0) {
+        listEl.innerHTML = `
+          <div class="p-4 rounded-xl bg-slate-800/70 border border-slate-700 text-center space-y-1">
+            <p class="text-sm font-semibold text-slate-200">Nenhum horário livre no momento</p>
+            <p class="text-xs text-slate-400">Assim que outro aluno avisar falta com antecedência, o horário aparece aqui automaticamente.</p>
+          </div>`;
+      } else {
+        listEl.innerHTML = vagasAbertas.map(v => {
+          const [y, m, d] = v.date.split('-');
+          const dtObj = new Date(Number(y), Number(m)-1, Number(d));
+          const diaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][dtObj.getDay()];
+          return `
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-800 border border-emerald-500/30">
+              <div>
+                <div class="text-sm font-bold text-white">${diaSemana}, ${d}/${m} às ${v.time}</div>
+                <div class="text-[11px] text-emerald-400">Vaga liberada por aviso prévio</div>
+              </div>
+              <button onclick="confirmarReposicao('${v.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs">
+                Agendar
+              </button>
+            </div>`;
+        }).join('');
+      }
+
+      document.getElementById('modalReposicao').classList.remove('hidden');
+    }
+
+    function closeReposicaoModal() {
+      document.getElementById('modalReposicao').classList.add('hidden');
+      pendingAbsenceToMakeupId = null;
+    }
+
+    function confirmarReposicao(slotSessionId) {
+      const slot = state.sessions.find(s => s.id === slotSessionId);
+      if (!slot || !slot.releasedSlot) return;
+
+      // Ocupa a vaga liberada
+      slot.releasedSlot = false;
+
+      // Cria a sessão de reposição agendada para o aluno atual
+      state.sessions.push({
+        id: 'rep_' + Date.now(),
+        studentId: state.selectedStudentId,
+        date: slot.date,
+        time: slot.time,
+        status: 'reposicao_agendada',
+        releasedSlot: false,
+        originAbsenceId: pendingAbsenceToMakeupId
+      });
+
+      saveState();
+      closeReposicaoModal();
+      render();
+      showToast(`Reposição agendada para ${slot.date.split('-').reverse().slice(0,2).join('/')} às ${slot.time}!`, '📅');
+    }
+
+    // =========================================================================
+    // RENDERIZAÇÃO: VISÃO DO ALUNO (BARRA SEMANAL DOM-SÁB ARRASTÁVEL + STATUS MÊS)
+    // =========================================================================
+    function switchRole(role) {
+      state.currentRole = role;
+      saveState();
+      render();
+    }
+
+    function selectStudent(id) {
+      state.selectedStudentId = id;
+      saveState();
+      render();
+    }
+
+    function renderAlunoView() {
+      const student = state.students.find(s => s.id === state.selectedStudentId) || state.students[0];
+      const studentSessions = state.sessions.filter(s => s.studentId === student.id);
+
+      // Gera 4 semanas (Semana atual + 3 próximas semanas) para arrastar horizontalmente (Dom -> Sáb)
+      const weeks = [0, 1, 2, 3].map(wIdx => {
+        const start = addDays(CURRENT_SUNDAY, wIdx * 7);
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+          const d = addDays(start, i);
+          const iso = formatISO(d);
+          const session = studentSessions.find(s => s.date === iso);
+          days.push({
+            dateObj: d,
+            iso,
+            dayName: ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'][i],
+            dayNum: String(d.getDate()).padStart(2, '0'),
+            monthShort: ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][d.getMonth()],
+            isToday: iso === formatISO(TODAY),
+            session
+          });
+        }
+        return { weekIndex: wIdx, days };
+      });
+
+      // Cálculos do Resumo do Mês Atual
+      const currentMonthPrefix = formatISO(TODAY).slice(0, 7); // YYYY-MM
+      const monthSessions = studentSessions.filter(s => s.date.startsWith(currentMonthPrefix));
+
+      const totalPresencas = monthSessions.filter(s => s.status === 'presenca').length;
+      const totalFaltas = monthSessions.filter(s => s.status === 'aviso_falta' || s.status === 'falta_sem_aviso').length;
+      const totalFaltasSemAviso = monthSessions.filter(s => s.status === 'falta_sem_aviso').length;
+      const totalFaltasComAviso = monthSessions.filter(s => s.status === 'aviso_falta').length;
+      const reposicoesAgendadas = monthSessions.filter(s => s.status === 'reposicao_agendada').length;
+      const reposicoesRealizadas = monthSessions.filter(s => s.status === 'reposicao_realizada').length;
+
+      // Faltas com aviso que ainda não têm reposição agendada/realizada
+      const faltasDisponiveisParaRepor = studentSessions.filter(s =>
+        s.status === 'aviso_falta' &&
+        !studentSessions.some(rep => rep.originAbsenceId === s.id)
+      );
+
+      // Vagas abertas no geral (de outros alunos)
+      const vagasLivresCount = state.sessions.filter(s =>
+        s.releasedSlot === true && s.studentId !== student.id && s.date >= formatISO(TODAY)
+      ).length;
+
+      return `
+        <!-- Seletor rápido de aluno (para demonstração) -->
+        <div class="flex items-center justify-between bg-slate-800/60 border border-slate-800 rounded-xl px-3 py-2">
+          <span class="text-xs text-slate-400">Aluno ativo:</span>
+          <select onchange="selectStudent(this.value)" class="bg-slate-900 text-white text-xs font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 outline-none">
+            ${state.students.map(st => `<option value="${st.id}" ${st.id === student.id ? 'selected' : ''}>${st.name}</option>`).join('')}
+          </select>
+        </div>
+
+        <!-- Card Perfil do Aluno -->
+        <div class="bg-gradient-to-br from-slate-800 to-slate-800/60 border border-slate-700/80 rounded-2xl p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-base font-bold text-white">${student.name}</h2>
+              <p class="text-xs text-slate-400 mt-0.5">${student.plan}</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Ativo</span>
+          </div>
+        </div>
+
+        <!-- BARRA HORIZONTAL DE AULAS: DOMINGO A SÁBADO (ARRASTÁVEL PARA PRÓXIMAS SEMANAS) -->
+        <section class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-white">Barra de Aulas (Dom → Sáb)</h3>
+              <p class="text-[11px] text-slate-400">Arraste para o lado para ver as próximas semanas →</p>
+            </div>
+            <span class="text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">Arraste ↔</span>
+          </div>
+
+          <!-- Carrossel Horizontal Snap -->
+          <div class="flex overflow-x-auto no-scrollbar snap-x-mandatory gap-3 pb-1">
+            ${weeks.map(w => {
+              const firstDay = w.days[0];
+              const lastDay = w.days[6];
+              const labelSemana = w.weekIndex === 0 ? 'Semana Atual' :
+                                  w.weekIndex === 1 ? 'Próxima Semana' : `Semana +${w.weekIndex}`;
+              return `
+                <div class="min-w-full snap-start bg-slate-800/80 border border-slate-700/90 rounded-2xl p-3 space-y-2.5">
+                  <div class="flex items-center justify-between border-b border-slate-700/70 pb-2">
+                    <span class="text-xs font-bold text-emerald-400">${labelSemana}</span>
+                    <span class="text-[11px] text-slate-400">${firstDay.dayNum}/${firstDay.monthShort} até ${lastDay.dayNum}/${lastDay.monthShort}</span>
+                  </div>
+
+                  <!-- Grade 7 Colunas: Domingo a Sábado da esquerda para direita -->
+                  <div class="grid grid-cols-7 gap-1.5">
+                    ${w.days.map(d => {
+                      let cardStyle = 'bg-slate-900/70 border-slate-800 text-slate-500';
+                      let badgeDot = '';
+                      let statusLabel = 'Livre';
+
+                      if (d.session) {
+                        const st = d.session.status;
+                        if (st === 'presenca' || st === 'reposicao_realizada') {
+                          // VERDE: Dia que treinou / presença marcada
+                          cardStyle = 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-sm shadow-emerald-500/10';
+                          badgeDot = '<span class="w-2 h-2 rounded-full bg-emerald-400"></span>';
+                          statusLabel = st === 'reposicao_realizada' ? 'Rep. OK' : 'Treinou';
+                        } else if (st === 'aviso_falta') {
+                          // AMARELO: Avisou falta com antecedência (pode repor)
+                          cardStyle = 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-sm shadow-amber-500/10';
+                          badgeDot = '<span class="w-2 h-2 rounded-full bg-amber-400"></span>';
+                          statusLabel = 'Repor';
+                        } else if (st === 'falta_sem_aviso') {
+                          // VERMELHO: Faltou sem aviso
+                          cardStyle = 'bg-rose-500/20 border-rose-500 text-rose-300 shadow-sm shadow-rose-500/10';
+                          badgeDot = '<span class="w-2 h-2 rounded-full bg-rose-500"></span>';
+                          statusLabel = 'Falta';
+                        } else if (st === 'reposicao_agendada') {
+                          // AZUL/CIANO: Reposição agendada
+                          cardStyle = 'bg-sky-500/20 border-sky-400 text-sky-300';
+                          badgeDot = '<span class="w-2 h-2 rounded-full bg-sky-400"></span>';
+                          statusLabel = 'Reposição';
+                        } else {
+                          // Aula futura agendada normal
+                          cardStyle = 'bg-slate-800 border-slate-600 text-slate-200';
+                          badgeDot = '<span class="w-2 h-2 rounded-full bg-slate-400"></span>';
+                          statusLabel = d.session.time;
+                        }
+                      }
+
+                      return `
+                        <div class="flex flex-col items-center justify-between py-2 px-1 rounded-xl border ${cardStyle} ${d.isToday ? 'ring-2 ring-white/40' : ''} min-h-[78px]">
+                          <span class="text-[9px] font-bold tracking-tight opacity-85">${d.dayName}</span>
+                          <span class="text-sm font-extrabold my-0.5">${d.dayNum}</span>
+                          <div class="flex flex-col items-center gap-0.5">
+                            ${badgeDot}
+                            <span class="text-[8px] font-semibold leading-none text-center">${statusLabel}</span>
+                          </div>
+                        </div>`;
+                    }).join('')}
+                  </div>
+
+                  <!-- Legenda rápida das cores -->
+                  <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-[10px] text-slate-400">
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span> Treinou</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-400"></span> Aviso (Repor)</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> Falta s/ aviso</span>
+                    <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-sky-400"></span> Reposição</span>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+        </section>
+
+        <!-- AÇÕES DO ALUNO: AVISAR FALTA COM ANTECEDÊNCIA OU AGENDAR REPOSIÇÃO -->
+        <section class="space-y-2.5">
+          ${faltasDisponiveisParaRepor.length > 0 ? `
+            <div class="bg-amber-500/15 border border-amber-400/50 rounded-2xl p-3.5 flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-bold text-amber-300">Você tem ${faltasDisponiveisParaRepor.length} crédito(s) de reposição!</p>
+                <p class="text-[11px] text-amber-200/80 mt-0.5">${vagasLivresCount} horário(s) liberado(s) disponíveis agora.</p>
+              </div>
+              <button onclick="openReposicaoModal('${faltasDisponiveisParaRepor[0].id}')" class="shrink-0 px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow">
+                Agendar Reposição
+              </button>
+            </div>` : ''}
+
+          <!-- Próximas aulas agendadas do aluno (onde ele pode avisar falta com antecedência) -->
+          <div class="bg-slate-800/50 border border-slate-800 rounded-2xl p-3.5 space-y-2">
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Suas Próximas Aulas</h4>
+            ${(() => {
+              const futuras = studentSessions.filter(s => s.status === 'agendado' && s.date >= formatISO(TODAY));
+              if (futuras.length === 0) return '<p class="text-xs text-slate-500">Nenhuma aula pendente.</p>';
+              return futuras.map(f => {
+                const [y, m, d] = f.date.split('-');
+                return `
+                  <div class="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-2.5">
+                    <div>
+                      <p class="text-xs font-bold text-white">Dia ${d}/${m} às ${f.time}</p>
+                      <p class="text-[11px] text-slate-400">Não vai poder ir? Avise antes para liberar reposição</p>
+                    </div>
+                    <button onclick="registrarAvisoFalta('${f.id}')" class="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 text-[11px] font-bold">
+                      Avisar Falta
+                    </button>
+                  </div>`;
+              }).join('');
+            })()}
+          </div>
+        </section>
+
+        <!-- STATUS DO MÊS (ABAIXO DO CALENDÁRIO SEMANAL) -->
+        <section class="bg-slate-800/80 border border-slate-700 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Status do Mês</h3>
+            <span class="text-[11px] text-slate-400 capitalize">${TODAY.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <!-- Presenças -->
+            <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-emerald-300">Presenças</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <p class="text-2xl font-extrabold text-white mt-1">${totalPresencas}</p>
+              <p class="text-[10px] text-emerald-300/80 mt-0.5">Treinos concluídos</p>
+            </div>
+
+            <!-- Faltas -->
+            <div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-rose-300">Faltas no Mês</span>
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+              </div>
+              <p class="text-2xl font-extrabold text-white mt-1">${totalFaltas}</p>
+              <p class="text-[10px] text-slate-300 mt-0.5">${totalFaltasComAviso} c/ aviso • ${totalFaltasSemAviso} s/ aviso</p>
+            </div>
+
+            <!-- Reposições Agendadas -->
+            <div class="bg-sky-500/10 border border-sky-500/30 rounded-xl p-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-sky-300">Reposições Agendadas</span>
+                <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+              </div>
+              <p class="text-2xl font-extrabold text-white mt-1">${reposicoesAgendadas}</p>
+              <p class="text-[10px] text-sky-300/80 mt-0.5">Horários reservados</p>
+            </div>
+
+            <!-- Reposições Realizadas -->
+            <div class="bg-amber-500/10 border border-amber-400/30 rounded-xl p-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold text-amber-300">Reposições Realizadas</span>
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              </div>
+              <p class="text-2xl font-extrabold text-white mt-1">${reposicoesRealizadas}</p>
+              <p class="text-[10px] text-amber-300/80 mt-0.5">Aulas repostas</p>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    // =========================================================================
+    // RENDERIZAÇÃO: VISÃO DO PERSONAL (CHAMADA / PRESENÇA / VAGAS LIBERADAS)
+    // =========================================================================
+    function renderPersonalView() {
+      const sortedSessions = [...state.sessions].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
+      const vagasLiberadas = sortedSessions.filter(s => s.releasedSlot);
+
+      return `
+        <!-- Resumo de Horários Liberados por Aviso Prévio -->
+        <section class="bg-amber-500/10 border border-amber-400/40 rounded-2xl p-4 space-y-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-bold text-amber-300">Vagas Liberadas para Reposição (${vagasLiberadas.length})</h2>
+            <span class="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">Automático</span>
+          </div>
+          <p class="text-xs text-slate-300">Quando um aluno avisa falta com antecedência, o horário abaixo fica aberto para outros alunos agendarem reposição.</p>
+          ${vagasLiberadas.length === 0
+            ? '<p class="text-xs text-slate-400 italic pt-1">Nenhum horário vago no momento.</p>'
+            : `<div class="space-y-1.5 pt-1">${vagasLiberadas.map(v => {
+                const st = state.students.find(x => x.id === v.studentId);
+                return `<div class="text-xs bg-slate-900/80 border border-amber-500/30 rounded-lg px-3 py-2 flex justify-between items-center">
+                  <span class="font-bold text-white">${v.date.split('-').reverse().slice(0,2).join('/')} às ${v.time}</span>
+                  <span class="text-amber-300 text-[11px]">Liberado por ${st ? st.name.split(' ')[0] : 'Aluno'}</span>
+                </div>`;
+              }).join('')}</div>`
+          }
+        </section>
+
+        <!-- Lista de Chamada / Marcação de Presença do Personal -->
+        <section class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Controle de Presença & Faltas</h3>
+            <button onclick="resetDemoData()" class="text-[11px] text-slate-400 underline hover:text-white">Resetar demo</button>
+          </div>
+
+          <div class="space-y-2.5">
+            ${sortedSessions.map(s => {
+              const st = state.students.find(x => x.id === s.studentId);
+              const [y, m, d] = s.date.split('-');
+              const isRep = s.status === 'reposicao_agendada' || s.status === 'reposicao_realizada';
+
+              return `
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-3.5 space-y-3">
+                  <div class="flex items-start justify-between">
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-extrabold text-emerald-400">${d}/${m} • ${s.time}</span>
+                        ${isRep ? '<span class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">Reposição</span>' : ''}
+                      </div>
+                      <h4 class="text-sm font-bold text-white mt-0.5">${st ? st.name : 'Aluno'}</h4>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-1 rounded-lg ${
+                      s.status === 'presenca' || s.status === 'reposicao_realizada' ? 'bg-emerald-500/20 text-emerald-300' :
+                      s.status === 'aviso_falta' ? 'bg-amber-500/20 text-amber-300' :
+                      s.status === 'falta_sem_aviso' ? 'bg-rose-500/20 text-rose-300' :
+                      'bg-slate-700 text-slate-300'
+                    }">
+                      ${s.status === 'presenca' ? '🟢 Presente' :
+                        s.status === 'reposicao_realizada' ? '🟢 Rep. Concluída' :
+                        s.status === 'aviso_falta' ? '🟡 Aviso (Vaga Livre)' :
+                        s.status === 'falta_sem_aviso' ? '🔴 Falta s/ Aviso' :
+                        s.status === 'reposicao_agendada' ? '🔵 Rep. Agendada' : '⚪ Agendado'}
+                    </span>
+                  </div>
+
+                  <!-- Botões de ação rápida do Personal -->
+                  <div class="grid grid-cols-3 gap-1.5">
+                    <button onclick="marcarStatusPersonal('${s.id}', '${isRep ? 'reposicao_realizada' : 'presenca'}')" class="py-1.5 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold">
+                      ✓ Presença
+                    </button>
+                    <button onclick="registrarAvisoFalta('${s.id}')" class="py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-300 text-[11px] font-bold">
+                      ⚠ Avisou Falta
+                    </button>
+                    <button onclick="marcarStatusPersonal('${s.id}', 'falta_sem_aviso')" class="py-1.5 px-2 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 text-[11px] font-bold">
+                      ✕ Faltou
+                    </button>
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>
+        </section>
+      `;
+    }
+
+    function resetDemoData() {
+      localStorage.removeItem(STORAGE_KEY);
+      state = buildDefaultState();
+      saveState();
+      render();
+      showToast('Dados de demonstração restaurados', '🔄');
+    }
+
+    function render() {
+      const btnP = document.getElementById('btnViewPersonal');
+      const btnA = document.getElementById('btnViewAluno');
+      if (state.currentRole === 'personal') {
+        btnP.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-emerald-500 text-slate-950';
+        btnA.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white';
+        document.getElementById('appContent').innerHTML = renderPersonalView();
+      } else {
+        btnA.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition bg-emerald-500 text-slate-950';
+        btnP.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-300 hover:text-white';
+        document.getElementById('appContent').innerHTML = renderAlunoView();
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>
