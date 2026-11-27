@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14213D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Diário do Personal</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+[hidden]{display:none!important}
+:root{--bg:#EEF0F2;--sf:#fff;--ink:#14213D;--mut:#5b6679;--ac:#FFC700;--on:#14213D;--ln:#d5d9e0;--ok:#1f7a45;--bad:#c62828;--warn:#8a6100;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1627;--sf:#18233B;--ink:#EEF0F2;--mut:#9aa6bb;--ln:#2b3957;--ok:#4fcf84;--bad:#ff7b72;--warn:#ffc700;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0E1627;--sf:#18233B;--ink:#EEF0F2;--mut:#9aa6bb;--ln:#2b3957;--ok:#4fcf84;--bad:#ff7b72;--warn:#ffc700;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:500 16px/1.4 Barlow,system-ui,sans-serif;padding-bottom:92px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:#14213D;z-index:10}
+h1,h2,h3{font-family:"Barlow Condensed",Impact,sans-serif;margin:0;letter-spacing:.2px}
+header{background:#14213D;color:#EEF0F2;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.tape{height:7px;background:repeating-linear-gradient(-45deg,#FFC700 0 10px,#14213D 10px 20px)}
+.top{position:relative;display:flex;align-items:center;justify-content:center;padding:12px 16px;min-height:54px}
+.top h1{font-size:26px;line-height:1.05;text-align:center;margin:0}
+.seg{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;background:#0b1428;border-radius:8px;padding:3px}
+.seg button{border:0;background:none;color:#cfd6e4;font:600 14px Barlow,sans-serif;padding:6px 12px;border-radius:6px;min-height:34px;cursor:pointer}
+.seg button.on{background:var(--ac);color:#14213D}
+main{max-width:640px;margin:0 auto;padding:14px 14px 0}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:12px}
+.card.hl{background:var(--ac);border-color:var(--ac);color:#14213D}
+.card.hl .mut{color:#3d4a66}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mut{color:var(--mut);font-size:14px}
+.h{font-size:22px;margin:18px 0 8px}
+.hora{font:700 24px "Barlow Condensed",sans-serif;min-width:58px}
+.big{font:700 26px/1.1 "Barlow Condensed",sans-serif}
+.lbl{font:700 13px Barlow,sans-serif;text-transform:uppercase;letter-spacing:.6px}
+.greet h2{font-size:30px;margin:6px 2px 12px;line-height:1.05}
+.quote p{margin:6px 0 0;font:italic 500 18px/1.35 Barlow,sans-serif}
+.pix{background:var(--bg);border:1px dashed var(--ln);border-radius:8px;padding:10px;margin-top:12px}
+.pixkey{font:700 22px "Barlow Condensed",sans-serif;letter-spacing:.5px;margin-top:2px}
+.rules{margin:8px 0 0;padding-left:20px}
+.rules li{margin:6px 0}
+button,input,select{font:inherit}
+.b{border:1.5px solid var(--ink);background:none;color:var(--ink);border-radius:8px;padding:8px 12px;font-weight:600;min-height:40px;cursor:pointer}
+.b:disabled{opacity:.45;cursor:not-allowed}
+.b.p{background:var(--ac);border-color:var(--ac);color:var(--on)}
+.b.ok.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.b.bad.on{background:var(--bad);border-color:var(--bad);color:#fff}
+.b.j.on{background:var(--warn);border-color:var(--warn);color:#fff}
+.b.sm{padding:4px 10px;min-height:32px;font-size:14px}
+.btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+input,select{border:1.5px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:8px 10px;min-height:40px;max-width:100%}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.f .w{grid-column:1/-1}
+.tag{display:inline-block;font-size:13px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--ln);color:var(--ink)}
+.tag.ok{background:var(--ok);color:#fff}
+.tag.bad{background:var(--bad);color:#fff}
+.tag.rep{background:var(--ac);color:#14213D}
+.tag.warn{background:var(--warn);color:#fff}
+.alert{background:var(--ac);color:#14213D;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--ln);border-radius:20px;padding:3px 4px 3px 10px;margin:4px 4px 0 0;font-size:14px}
+.chip button{border:0;background:none;color:var(--mut);font-size:18px;line-height:1;padding:2px 6px;cursor:pointer}
+.date{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.date h2{font-size:24px;text-align:center}
+.sum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sum .card{margin:0}
+.sum b{font:700 26px "Barlow Condensed",sans-serif;display:block}
+.empty{text-align:center;color:var(--mut);padding:24px 8px}
+.cal-wrap{max-width:340px;margin:0 auto}
+.cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px}
+.cal-hdr h2{font-size:19px;text-align:center;letter-spacing:.3px}
+.cal-hdr .b.sm{min-height:28px;padding:2px 9px;font-size:15px;border-radius:7px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}
+.cal .dw{font:700 11px Barlow,sans-serif;text-transform:uppercase;color:var(--mut);padding:2px 0 4px}
+.cal button{position:relative;height:34px;min-height:34px;border:1px solid transparent;background:var(--bg);border-radius:8px;color:var(--ink);font:600 13px Barlow,sans-serif;padding:0;cursor:pointer;transition:transform .1s,background .15s,border-color .15s}
+.cal button:not(:disabled):hover{border-color:var(--ink)}
+.cal button:disabled{background:transparent;color:var(--mut);opacity:.32;cursor:not-allowed}
+.cal button.today{border-color:var(--ink);font-weight:700}
+.cal button.sel{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700;box-shadow:0 2px 6px rgba(20,33,61,.18)}
+.cal .dot{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--warn)}
+.cal button.sel .dot{background:var(--on)}
+.slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
+.slots button{border:1.5px solid var(--ink);background:none;color:var(--ink);border-radius:8px;padding:8px 4px;font:700 16px "Barlow Condensed",sans-serif;min-height:40px;cursor:pointer}
+.slots button:not(:disabled):hover{background:var(--ac);color:var(--on);border-color:var(--ac)}
+.login{max-width:400px;margin:24px auto 0;text-align:center}
+.login h2{font-size:30px;text-align:center}
+.login p{text-align:center}
+.login input{width:100%;text-align:center;font:700 28px "Barlow Condensed",sans-serif;letter-spacing:8px}
+.login input[type="email"],.login input[type="password"]{text-align:center;font:500 16px/1.4 Barlow,system-ui,sans-serif;letter-spacing:normal}
+.err{color:var(--bad);font-weight:600;font-size:14px;min-height:22px;margin-top:8px;text-align:center}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--sf);border-top:1px solid var(--ln);display:flex;padding-bottom:env(safe-area-inset-bottom,0px);z-index:6}
+nav button{flex:1;border:0;background:none;color:var(--mut);font:600 12px/1.1 Barlow,sans-serif;padding:8px 2px;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-top:3px solid transparent;cursor:pointer}
+nav button .i{font-size:20px}
+nav button.on{color:var(--ink);border-top-color:var(--ac)}
+.fab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:7;text-decoration:none}
+body.nav-on .fab{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.fab svg{width:30px;height:30px;fill:#fff}
+.bell-fab{position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom,0px));width:54px;height:54px;border-radius:50%;background:#14213D;color:#FFC700;border:2px solid #FFC700;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.28);z-index:7;cursor:pointer;font-size:22px}
+.bell-badge{position:absolute;top:-4px;right:-4px;background:var(--bad);color:#fff;font:700 12px/1 Barlow,sans-serif;padding:3px 6px;border-radius:999px;min-width:20px;text-align:center}
+.notif-pop{position:fixed;right:16px;bottom:calc(146px + env(safe-area-inset-bottom,0px));width:min(340px,calc(100vw - 32px));max-height:60vh;overflow-y:auto;background:var(--sf);border:1.5px solid var(--ln);border-radius:14px;padding:12px;box-shadow:0 12px 28px rgba(0,0,0,.3);z-index:8}
+.notif-item{padding:10px 8px;border-bottom:1px solid var(--ln);font-size:14px;border-radius:8px;cursor:pointer;transition:background .15s}
+.notif-item:hover{background:var(--bg)}
+.notif-item:last-child{border-bottom:0}
+.notif-item.unread{background:rgba(255,199,0,.14)}
+.notif-item.unread .n-title,.notif-item.unread .n-msg{font-weight:700;color:var(--ink)}
+.notif-item.read .n-title,.notif-item.read .n-msg{font-weight:400;color:var(--mut)}
+.n-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-right:6px;vertical-align:middle}
+.b.wa{border-color:#25D366;color:#178a43}
+:root[data-theme="dark"] .b.wa{color:#4fcf84}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .b.wa{color:#4fcf84}}
+button:focus-visible,input:focus-visible,select:focus-visible,.fab:focus-visible,.bell-fab:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+
+/* Barra semanal horizontal (Dom -> Sáb arrastável) e Status do Mês */
+.wk-strip{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:10px;padding-bottom:4px;-ms-overflow-style:none;scrollbar-width:none}
+.wk-strip::-webkit-scrollbar{display:none}
+.wk-pane{min-width:100%;scroll-snap-align:start;background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:12px}
+.wk-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.wk-day{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:7px 2px;border-radius:9px;border:1.5px solid var(--ln);background:var(--bg);min-height:76px;text-align:center}
+.wk-day.today{box-shadow:0 0 0 2px var(--ink)}
+.wk-day.st-p{background:var(--ok);border-color:var(--ok);color:#fff}
+.wk-day.st-j{background:#FFC700;border-color:#d4a300;color:#14213D}
+.wk-day.st-f{background:var(--bad);border-color:var(--bad);color:#fff}
+.wk-day.st-rep{background:#14213D;border-color:#14213D;color:#FFC700}
+.wk-day .wd{font:700 10px Barlow,sans-serif;text-transform:uppercase;opacity:.85}
+.wk-day .wn{font:700 18px/1.1 "Barlow Condensed",sans-serif;margin:2px 0}
+.wk-day .ws{font:700 10px/1.1 Barlow,sans-serif}
+.wk-leg{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:12px;color:var(--mut)}
+.wk-leg span{display:inline-flex;align-items:center;gap:4px}
+.wk-leg i{display:inline-block;width:10px;height:10px;border-radius:3px}
+.mstat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.mstat-box{background:var(--bg);border:1px solid var(--ln);border-radius:10px;padding:10px}
+.mstat-box b{font:700 26px/1.1 "Barlow Condensed",sans-serif;display:block;margin-top:2px}
+.prog-track{height:10px;background:var(--bg);border:1px solid var(--ln);border-radius:999px;overflow:hidden;margin:10px 0 6px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--ok),var(--ac));border-radius:999px;transition:width .35s ease}
+.msgbox{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}
+.msgbox .box{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:16px;max-width:360px;width:100%}
+.dow-pills{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0}
+.dow-pills button{border:1.5px solid var(--ln);background:var(--bg);color:var(--ink);border-radius:8px;padding:5px 9px;font:700 13px Barlow,sans-serif;cursor:pointer;min-height:32px}
+.dow-pills button.on{background:var(--ink);color:var(--sf);border-color:var(--ink)}
+.slot-tog{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:6px;margin-top:10px}
+.slot-tog button{border:1.5px solid var(--ln);background:var(--bg);color:var(--mut);border-radius:8px;padding:7px 4px;font:700 15px "Barlow Condensed",sans-serif;min-height:38px;cursor:pointer;transition:all .15s}
+.slot-tog button.on{background:var(--ac);border-color:var(--ac);color:var(--on)}
+</style>
+</head>
+<body>
+<header>
+  <div class="tape"></div>
+  <div class="top"><h1 id="brand">Diário do Personal</h1><div class="seg" id="seg" hidden></div></div>
+</header>
+<main id="app"><div class="empty">Carregando…</div></main>
+<nav id="nav"></nav>
+<a id="fab" class="fab" href="https://wa.me/5517996477607?text=Ol%C3%A1%20Danilo!%20Vim%20pelo%20app%20Di%C3%A1rio%20do%20Personal" target="_blank" rel="noopener" aria-label="Falar com o Danilo no WhatsApp" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+</a>
+<button id="bell-fab" class="bell-fab" onclick="toggleNotifPop()" aria-label="Últimas atualizações dos alunos" hidden>🕒<span id="bell-badge" class="bell-badge" hidden>0</span></button>
+<div id="notif-pop" class="notif-pop" hidden></div>
+<div id="msgbox" class="msgbox" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+var SUPABASE_URL = 'https://jiudjwiicarrzrcpdknt.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_dnbpFKVkeng3AqfffTNLQg_kXT3C5qQ';
+var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var DOW=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+var PIX='454.430.958-11';
+var TABS={p:[['agenda','🗓','Agenda'],['alunos','👥','Alunos'],['rep','🔁','Reposições'],['pag','💰','Pagamentos']],a:[['inicio','🏠','Início'],['aulas','🗓','Aulas'],['rep','🔁','Reposições']]};
+
+var S={alunos:[],aulas:[],reg:{},rep:[],pagos:{},vinc:{},tel:{},codigos:{},repSlots:{},lemb:''};
+var ui={role:'p',tab:'agenda',date:'',repDow:null,aluno:null,editAlunoId:null,mon:null,day:'',sel:null,scope:null,login:'',authErr:'',authMode:'login',pixAt:0,notifOpen:false,feed:[],unread:0};
+var SESSION=null,UID=null,OWNER=false,loaded=false,notified=false,pollTimer=null,prevSnap=null;
+
+/* ---------- caixa de mensagem sem alert/confirm nativo ---------- */
+function showMsg(txt,onOk){
+  var box=document.getElementById('msgbox');
+  box.hidden=false;
+  box.innerHTML='<div class="box"><p style="margin:0 0 14px">'+esc(txt)+'</p><div class="btns" style="justify-content:flex-end">'+
+    (onOk?'<button class="b sm" onclick="closeMsg()">Cancelar</button><button class="b sm p" id="msg-ok">Confirmar</button>':'<button class="b sm p" onclick="closeMsg()">OK</button>')+
+    '</div></div>';
+  if(onOk){
+    document.getElementById('msg-ok').onclick=function(){closeMsg();onOk()};
+  }
+}
+function closeMsg(){var box=document.getElementById('msgbox');if(box){box.hidden=true;box.innerHTML=''}}
+function werr(msg){showMsg(msg||'Não foi possível salvar agora. Verifique a conexão e tente de novo.')}
+
+/* ---------- utilidades ---------- */
+function pad(n){return(n<10?'0':'')+n}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function hoje(){return iso(new Date())}
+function pd(s){return new Date(s+'T00:00')}
+function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fd(s){var d=pd(s);return DOW[d.getDay()].slice(0,3)+', '+pad(d.getDate())+'/'+pad(d.getMonth()+1)}
+function dmy(s){return String(s).split('-').reverse().join('/')}
+function brl(v){return 'R$ '+Number(v||0).toFixed(2).replace('.',',')}
+function val(id){var e=document.getElementById(id);return e?e.value:''}
+function al(id){for(var i=0;i<S.alunos.length;i++)if(S.alunos[i].id===id)return S.alunos[i];return null}
+function isPres(a){return !!a&&(a.tipo||'presencial')!=='online'}
+function isOnl(a){return !!a&&a.tipo==='online'}
+function mes(){return hoje().slice(0,7)}
+function telOf(a){return S.tel[a.id]||''}
+function codeOf(a){return S.codigos[a.id]||''}
+function firstName(a){return String(a.nome||'').split(' ')[0]}
+function waLink(tel,text){return 'https://wa.me/55'+tel+'?text='+encodeURIComponent(text)}
+function byNome(x,y){return String(x.nome||'').localeCompare(String(y.nome||''),'pt-BR')}
+function sortAula(x,y){return x.dow-y.dow||(x.h<y.h?-1:x.h>y.h?1:0)}
+function linkedIds(){var o={};Object.keys(S.vinc).forEach(function(u){o[S.vinc[u]]=1});return o}
+function normTime(t){if(!t)return '';var p=String(t).split(':');return pad(parseInt(p[0],10)||0)+':'+pad(parseInt(p[1],10)||0)}
+
+/* ---------- pagamentos ---------- */
+function pay(a){
+  var m=mes(),due=m+'-'+pad(Math.min(a.venc||10,28));
+  if(S.pagos[a.id+'|'+m])return{s:'pago',due:due,d:0};
+  var d=Math.round((pd(due)-pd(hoje()))/864e5);
+  return{s:d<0?'atrasado':'aberto',due:due,d:d};
+}
+function ord(a){var p=pay(a);return p.s==='pago'?1e6:p.d}
+function payTxt(a){
+  var p=pay(a);
+  if(p.s==='pago')return '<span class="tag ok">Pago</span>';
+  if(p.s==='atrasado')return '<span class="tag bad">Atrasado há '+(-p.d)+' dia(s)</span>';
+  if(p.d===0)return '<span class="tag warn">Vence hoje</span>';
+  if(p.d<=3)return '<span class="tag warn">Vence em '+p.d+' dia(s)</span>';
+  return '<span class="tag ok">Em dia</span>';
+}
+
+/* ---------- agenda e grade ---------- */
+function dayItems(date,aid){
+  var d=pd(date).getDay(),out=[];
+  S.aulas.forEach(function(x){
+    if(x.dow!==d||!isPres(al(x.a)))return;
+    if(aid&&x.a!==aid)return;
+    out.push({a:x.a,h:x.h,k:x.a+'|'+date+'|'+x.h,rep:false});
+  });
+  S.rep.forEach(function(r){
+    if(!r.data||r.data!==date||!isPres(al(r.a)))return;
+    if(aid&&r.a!==aid)return;
+    out.push({a:r.a,h:r.h,k:'R'+r.id,rep:true,id:r.id});
+  });
+  return out.sort(function(x,y){return x.h<y.h?-1:x.h>y.h?1:0});
+}
+function occ(date){
+  var d=pd(date).getDay(),o={};
+  S.aulas.forEach(function(x){
+    if(x.dow!==d||!isPres(al(x.a)))return;
+    var k=x.a+'|'+date+'|'+x.h;
+    if(S.reg[k]==='j')return; // Falta avisada com antecedência libera o horário para reposição
+    o[x.h]=1;
+    o[String(x.h).slice(0,2)]=1;
+  });
+  S.rep.forEach(function(r){
+    if(r.data!==date||!isPres(al(r.a)))return;
+    if(S.reg['R'+r.id]==='j')return;
+    o[r.h]=1;
+    o[String(r.h).slice(0,2)]=1;
+  });
+  return o;
+}
+function loadLocalRepSlots(){
+  try{
+    var raw=localStorage.getItem('diario_personal_rep_slots');
+    if(raw){
+      var parsed=JSON.parse(raw);
+      if(parsed&&typeof parsed==='object')return parsed;
+    }
+  }catch(e){}
+  return null;
+}
+function saveLocalRepSlots(){
+  try{localStorage.setItem('diario_personal_rep_slots',JSON.stringify(S.repSlots||{}))}catch(e){}
+}
+async function persistRepSlots(){
+  saveLocalRepSlots();
+  if(!OWNER)return;
+  var res=await sb.from('app_config').upsert({chave:'rep_slots_dow',valor:JSON.stringify(S.repSlots||{})});
+  if(res.error)werr(res.error.message);
+}
+async function toggleRepSlotDow(dow,hora){
+  var h=normTime(hora);
+  if(!h)return;
+  if(!S.repSlots)S.repSlots={};
+  var list=(S.repSlots[dow]||[]).slice();
+  var idx=list.indexOf(h);
+  if(idx>=0)list.splice(idx,1);
+  else list.push(h);
+  list.sort();
+  S.repSlots[dow]=list;
+  snap();
+  await persistRepSlots();
+}
+async function addCustomRepSlot(dow){
+  var raw=val('rep-custom-h');
+  if(!raw){showMsg('Selecione um horário para liberar.');return}
+  var h=normTime(raw);
+  if(!S.repSlots)S.repSlots={};
+  var list=(S.repSlots[dow]||[]).slice();
+  if(list.indexOf(h)<0){
+    list.push(h);
+    list.sort();
+    S.repSlots[dow]=list;
+    snap();
+    await persistRepSlots();
+  }
+  var inp=document.getElementById('rep-custom-h');
+  if(inp)inp.value='';
+}
+function slotsFor(date,minHours){
+  var d=pd(date).getDay(),o=occ(date),now=new Date(),leadMs=(minHours||0)*36e5;
+  var pool={};
+  // 1. Horários liberados manualmente pelo Personal para este dia da semana
+  var manual=(S.repSlots&&Array.isArray(S.repSlots[d]))?S.repSlots[d]:[];
+  manual.forEach(function(h){pool[normTime(h)]=1});
+  // 2. Horários liberados automaticamente quando um aluno avisou falta com antecedência nesta data
+  S.aulas.forEach(function(x){
+    if(x.dow!==d||!isPres(al(x.a)))return;
+    var k=x.a+'|'+date+'|'+x.h;
+    if(S.reg[k]==='j')pool[normTime(x.h)]=1;
+  });
+  return Object.keys(pool).sort().filter(function(hm){
+    if(o[hm]||o[hm.slice(0,2)])return false;
+    var slotDt=new Date(date+'T'+hm+':00');
+    if(slotDt.getTime()-now.getTime()<leadMs)return false;
+    return true;
+  });
+}
+function pickId(aid){
+  var pend=S.rep.filter(function(r){return !r.data&&isPres(al(r.a))&&(!aid||r.a===aid)});
+  if(ui.sel&&pend.some(function(r){return r.id===ui.sel}))return ui.sel;
+  return pend.length===1?pend[0].id:null;
+}
+
+/* ---------- escrita no banco (Supabase) ---------- */
+function loadLocalFeed(){
+  try{
+    var raw=localStorage.getItem('diario_personal_feed');
+    if(raw){var arr=JSON.parse(raw);if(Array.isArray(arr))return arr}
+  }catch(e){}
+  return [];
+}
+function saveLocalFeed(list){
+  try{localStorage.setItem('diario_personal_feed',JSON.stringify(list||[]))}catch(e){}
+}
+async function pushAlunoNotif(alunoId,texto){
+  var a=al(alunoId);
+  var nome=a?a.nome:'Aluno';
+  var now=new Date();
+  var hm=pad(now.getDate())+'/'+pad(now.getMonth()+1)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  var ev={id:'n_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),aluno:nome,msg:texto,hora:hm,read:false};
+  var current=loadLocalFeed();
+  try{
+    var res=await sb.from('app_config').select('valor').eq('chave','aluno_feed').maybeSingle();
+    if(res.data&&res.data.valor){
+      var parsed=JSON.parse(res.data.valor);
+      if(Array.isArray(parsed))current=parsed;
+    }
+  }catch(e){}
+  current.unshift(ev);
+  if(current.length>40)current.length=40;
+  saveLocalFeed(current);
+  ui.feed=current;
+  ui.unread=current.filter(function(x){return !x.read}).length;
+  try{await sb.from('app_config').upsert({chave:'aluno_feed',valor:JSON.stringify(current)})}catch(e){}
+}
+async function syncFeedFromCloud(){
+  var merged=loadLocalFeed();
+  try{
+    var res=await sb.from('app_config').select('valor').eq('chave','aluno_feed').maybeSingle();
+    if(res.data&&res.data.valor){
+      var parsed=JSON.parse(res.data.valor);
+      if(Array.isArray(parsed)){
+        var readMap={};
+        merged.forEach(function(item){if(item&&item.id&&item.read)readMap[item.id]=true});
+        parsed.forEach(function(item){if(item&&item.id&&readMap[item.id])item.read=true});
+        merged=parsed;
+        saveLocalFeed(merged);
+      }
+    }
+  }catch(e){}
+  ui.feed=merged;
+  ui.unread=merged.filter(function(x){return !x.read}).length;
+}
+async function persistFeedState(){
+  saveLocalFeed(ui.feed);
+  ui.unread=ui.feed.filter(function(x){return !x.read}).length;
+  renderBell();
+  try{await sb.from('app_config').upsert({chave:'aluno_feed',valor:JSON.stringify(ui.feed)})}catch(e){}
+}
+async function setReg(k,t,rep,a,date){
+  var cur=S.reg[k],nt=cur===t?null:t;
+  var parts=k.split('|');
+  var aulaDate=rep?(S.rep.find(function(r){return r.id===k.slice(1)})||{}).data||date:date;
+  var aulaHora=rep?(S.rep.find(function(r){return r.id===k.slice(1)})||{}).h:(parts[2]||'07:00');
+  var res=await sb.rpc('registrar_presenca',{
+    p_aluno_id:a,
+    p_data:aulaDate,
+    p_hora:normTime(aulaHora)+':00',
+    p_status:nt,
+    p_is_reposicao:!!rep
+  });
+  if(res.error){werr(res.error.message);return}
+  if(!OWNER||ui.role==='a'){
+    var dtLabel=fd(aulaDate)+' às '+normTime(aulaHora);
+    if(nt==='j')await pushAlunoNotif(a,'Avisou que vai faltar na aula de '+dtLabel+'.');
+    else if(cur==='j'&&!nt)await pushAlunoNotif(a,'Desfez o aviso de falta da aula de '+dtLabel+'.');
+  }
+  await refreshAll();
+}
+
+async function togglePay(id){
+  var m=mes(),k=id+'|'+m,res;
+  if(S.pagos[k]){
+    res=await sb.from('pagamentos').delete().eq('aluno_id',id).eq('mes',m);
+  }else{
+    res=await sb.from('pagamentos').insert({aluno_id:id,mes:m});
+  }
+  if(res.error){werr(res.error.message);return}
+  await refreshAll();
+}
+
+async function addAluno(){
+  var n=val('f-nome').trim();
+  if(!n){showMsg('Digite o nome do aluno.');return}
+  var v=parseFloat(val('f-valor').replace(',','.'))||0;
+  var d=Math.min(28,Math.max(1,parseInt(val('f-venc'),10)||10));
+  var tel=val('f-tel').replace(/\D/g,'');
+  var ins=await sb.from('alunos').insert({nome:n,valor:v,venc:d,tipo:'presencial'}).select('id').single();
+  if(ins.error||!ins.data){werr(ins.error&&ins.error.message);return}
+  var id=ins.data.id;
+  if(tel){
+    var cRes=await sb.from('contatos').upsert({aluno_id:id,telefone:tel});
+    if(cRes.error)werr(cRes.error.message);
+  }
+  ['f-nome','f-tel','f-valor','f-venc'].forEach(function(x){var e=document.getElementById(x);if(e)e.value=''});
+  await refreshAll();
+}
+
+function startEditAluno(id){
+  ui.editAlunoId=ui.editAlunoId===id?null:id;
+  snap();
+}
+
+async function saveEditAluno(id){
+  var n=val('e-nome-'+id).trim();
+  if(!n){showMsg('Digite o nome do aluno.');return}
+  var v=parseFloat(val('e-valor-'+id).replace(',','.'))||0;
+  var d=Math.min(28,Math.max(1,parseInt(val('e-venc-'+id),10)||10));
+  var tel=val('e-tel-'+id).replace(/\D/g,'');
+  var up=await sb.from('alunos').update({nome:n,valor:v,venc:d}).eq('id',id);
+  if(up.error){werr(up.error.message);return}
+  if(tel){
+    var cRes=await sb.from('contatos').upsert({aluno_id:id,telefone:tel});
+    if(cRes.error)werr(cRes.error.message);
+  }else{
+    await sb.from('contatos').delete().eq('aluno_id',id);
+  }
+  ui.editAlunoId=null;
+  await refreshAll();
+  showMsg('Dados do aluno atualizados!');
+}
+
+async function addAula(aid){
+  var h=normTime(val('sh'+aid)||'07:00');
+  var res=await sb.from('aulas').insert({aluno_id:aid,dow:+val('sd'+aid),hora:h+':00'});
+  if(res.error){werr(res.error.message);return}
+  await refreshAll();
+}
+
+async function rmAula(id){
+  var res=await sb.from('aulas').delete().eq('id',id);
+  if(res.error){werr(res.error.message);return}
+  await refreshAll();
+}
+
+function rmAluno(id){
+  showMsg('Excluir este aluno? A grade, as reposições e os pagamentos dele também serão removidos.',async function(){
+    var res=await sb.from('alunos').delete().eq('id',id);
+    if(res.error){werr(res.error.message);return}
+    await refreshAll();
+  });
+}
+
+function selRep(id){ui.sel=ui.sel===id?null:id;snap()}
+
+async function unsched(id){
+  var oldRep=S.rep.find(function(r){return r.id===id});
+  var res=await sb.rpc('desmarcar_reposicao',{p_reposicao_id:id});
+  if(res.error){werr(res.error.message);return}
+  if(oldRep&&oldRep.data&&(!OWNER||ui.role==='a')){
+    await pushAlunoNotif(oldRep.a,'Desmarcou a reposição do dia '+fd(oldRep.data)+' às '+oldRep.h+'.');
+  }
+  await refreshAll();
+}
+
+async function schedSlot(h){
+  var id=pickId(ui.scope);
+  if(!id){showMsg('Escolha primeiro a reposição que vai agendar.');return}
+  var targetRep=S.rep.find(function(r){return r.id===id});
+  if(ui.scope){
+    var slotDt=new Date(ui.day+'T'+normTime(h)+':00');
+    if(slotDt.getTime()-Date.now()<12*36e5){
+      showMsg('O agendamento de reposição exige no mínimo 12 horas de antecedência.');
+      return;
+    }
+  }
+  var res=await sb.rpc('agendar_reposicao',{
+    p_reposicao_id:id,
+    p_data:ui.day,
+    p_hora:normTime(h)+':00'
+  });
+  if(res.error){werr(res.error.message);return}
+  if(targetRep&&(!OWNER||ui.role==='a')){
+    await pushAlunoNotif(targetRep.a,'Agendou reposição para '+fd(ui.day)+' às '+normTime(h)+'.');
+  }
+  ui.sel=null;
+  await refreshAll();
+}
+
+async function schedExtra(){
+  var v=val('rep-extra');
+  if(!v){showMsg('Digite o horário.');return}
+  if(ui.day===hoje()){
+    var now=new Date(),hm=pad(now.getHours())+':'+pad(now.getMinutes());
+    if(v<=hm){showMsg('Esse horário já passou hoje.');return}
+  }
+  if(occ(ui.day)[v.slice(0,2)]){
+    showMsg('Esse horário já tem aula ou reposição. Agendar mesmo assim?',function(){schedSlot(v)});
+    return;
+  }
+  await schedSlot(v);
+}
+
+/* ---------- ações do personal ---------- */
+function cobrar(id){
+  var a=al(id),p=pay(a),t=telOf(a);
+  if(!t){showMsg('Cadastre o WhatsApp do aluno em Alunos.');return}
+  var msg='Oi, '+firstName(a)+'! Lembrete: a mensalidade de '+brl(a.valor)+' '+(p.s==='atrasado'?'venceu':'vence')+' em '+dmy(p.due)+'. Qualquer dúvida, me chama.';
+  window.open(waLink(t,msg),'_blank');
+}
+function abrirWhatsAppAluno(id){
+  var a=al(id),t=telOf(a);
+  if(!t){showMsg('Cadastre o WhatsApp deste aluno clicando em Editar.');return}
+  var msg='Oi, '+firstName(a)+'! Tudo bem?';
+  window.open(waLink(t,msg),'_blank');
+}
+function enviarCodigo(id){
+  var a=al(id),t=telOf(a),cod=codeOf(a);
+  if(!t){showMsg('Cadastre o WhatsApp deste aluno em Alunos.');return}
+  var msg='Oi, '+firstName(a)+'! Seu código de acesso ao Diário do Personal é '+cod+'. Entre na sua conta no app e digite o código na primeira vez.';
+  window.open(waLink(t,msg),'_blank');
+}
+
+/* ---------- autenticação e aluno ---------- */
+async function signInEmail(){
+  ui.authErr='';
+  var email=val('auth-email').trim();
+  var pass=val('auth-pass');
+  if(!email||!pass){ui.authErr='Preencha e-mail e senha.';snap();return}
+  var res=await sb.auth.signInWithPassword({email:email,password:pass});
+  if(res.error){ui.authErr=res.error.message||'E-mail ou senha inválidos.';snap();return}
+}
+
+async function signUpEmail(){
+  ui.authErr='';
+  var email=val('auth-email').trim();
+  var pass=val('auth-pass');
+  if(!email||pass.length<6){ui.authErr='Informe um e-mail válido e senha com pelo menos 6 caracteres.';snap();return}
+  var res=await sb.auth.signUp({email:email,password:pass});
+  if(res.error){ui.authErr=res.error.message||'Não foi possível criar a conta.';snap();return}
+  if(!res.data.session){
+    ui.authErr='Conta criada! Verifique seu e-mail (se a confirmação estiver ativa) e depois faça login.';
+    snap();
+  }
+}
+
+async function signOutApp(){
+  await sb.auth.signOut();
+  SESSION=null;UID=null;OWNER=false;loaded=false;
+  S={alunos:[],aulas:[],reg:{},rep:[],pagos:{},vinc:{},tel:{},codigos:{},repSlots:{},lemb:''};
+  render();
+}
+
+function myAluno(){
+  if(OWNER){var a=al(ui.aluno);if(!a&&S.alunos.length){ui.aluno=S.alunos[0].id;a=S.alunos[0]}return a||null}
+  var v=UID&&S.vinc[UID];
+  return v?al(v):null;
+}
+
+async function claimCode(){
+  var c=val('l-code').replace(/\D/g,'');
+  if(c.length!==6){ui.login='Digite os 6 dígitos do código.';snap();return}
+  var res=await sb.rpc('claim_code',{p_codigo:c});
+  if(res.error){ui.login='Código inválido. Confira com o seu personal e tente de novo.';snap();return}
+  ui.login='';
+  await refreshAll();
+}
+
+function copyPix(){
+  var done=function(){ui.pixAt=Date.now();snap();setTimeout(snap,2300)};
+  var fallback=function(){
+    var ta=document.createElement('textarea');
+    ta.value=PIX;ta.setAttribute('readonly','');
+    ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();
+    var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+    document.body.removeChild(ta);
+    if(ok)done();else showMsg('Não foi possível copiar. Chave Pix: '+PIX);
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(PIX).then(done,fallback)}
+  else fallback();
+}
+function askNotif(){try{Notification.requestPermission().then(function(){snap()})}catch(e){}}
+function stCls(st){return st==='p'?'ok':st==='j'?'warn':'bad'}
+function stTxt(st){return st==='p'?'Presente':st==='j'?'Falta avisada':'Faltou'}
+function statusHoje(a){
+  if(isOnl(a))return{title:'Consultoria online',sub:'Seu acompanhamento não tem horário fixo na agenda. Siga o treino e as orientações passadas pelo seu personal.'};
+  var t=hoje(),now=new Date(),nowHM=pad(now.getHours())+':'+pad(now.getMinutes());
+  var its=dayItems(t,a.id).filter(function(i){return i.h>nowHM});
+  if(its.length){
+    var it=its[0],st=S.reg[it.k];
+    return{title:'Hoje você tem treino às '+it.h,sub:(it.rep?'Reposição agendada':'Treino fixo')+(st==='j'?' · falta avisada':'')};
+  }
+  for(var i=1;i<=60;i++){
+    var b=new Date();b.setDate(b.getDate()+i);
+    var d=iso(b),n=dayItems(d,a.id);
+    if(n.length)return{title:'Hoje não há treino agendado',sub:'Próximo treino: '+fd(d)+' às '+n[0].h};
+  }
+  return{title:'Hoje não há treino agendado',sub:'Nenhum horário fixo encontrado. Fale com o seu personal.'};
+}
+
+/* ---------- cartões ---------- */
+function itemCard(it,date,aluno){
+  var a=al(it.a);if(!a)return '';
+  var title=aluno?(DOW[pd(date).getDay()]+' · '+fd(date).split(', ')[1]):esc(a.nome);
+  return '<div class="card"><div class="row"><div style="display:flex;gap:12px;align-items:center"><span class="hora">'+it.h+'</span><div><b>'+title+'</b>'+(it.rep?' <span class="tag rep">Reposição</span>':'')+'</div></div></div>'+stBtns(it,date,aluno,S.reg[it.k])+'</div>';
+}
+function stBtns(it,date,aluno,st){
+  var fut=date>=hoje();
+  if(aluno){
+    if(!fut||it.rep)return st?'<div style="margin-top:8px"><span class="tag '+stCls(st)+'">'+stTxt(st)+'</span></div>':'';
+    return '<div class="btns"><button class="b sm j '+(st==='j'?'on':'')+'" onclick="setReg(\''+it.k+'\',\'j\',false,\''+it.a+'\',\''+date+'\')">'+(st==='j'?'Falta avisada · desfazer':'Avisar que vou faltar')+'</button></div>';
+  }
+  var bt=function(code,cls,lbl){return '<button class="b sm '+cls+' '+(st===code?'on':'')+'" onclick="setReg(\''+it.k+'\',\''+code+'\','+it.rep+',\''+it.a+'\',\''+date+'\')">'+lbl+'</button>'};
+  return '<div class="btns">'+bt('p','ok','Presente')+bt('f','bad','Faltou')+bt('j','j','Falta avisada')+'</div>';
+}
+function chip(x){return '<span class="chip">'+DOW[x.dow].slice(0,3)+' '+x.h+'<button onclick="rmAula(\''+x.id+'\')" aria-label="Remover horário">×</button></span>'}
+function finCard(a){
+  var pixTxt=(Date.now()-ui.pixAt<2200)?'Chave Pix copiada!':'Copiar chave Pix';
+  var nb=('Notification' in window)&&Notification.permission==='default'?'<button class="b" style="width:100%;margin-top:10px" onclick="askNotif()">Ativar avisos de vencimento neste aparelho</button>':'';
+  return '<div class="card"><div class="row"><b>Mensalidade</b>'+payTxt(a)+'</div>'+
+    '<div class="big" style="margin-top:6px">'+brl(a.valor)+'</div>'+
+    '<div class="mut">Vencimento todo dia '+a.venc+'</div>'+
+    '<div class="pix"><span class="mut">Chave Pix</span><div class="pixkey">'+PIX+'</div>'+
+    '<button id="pixbtn" class="b p" onclick="copyPix()" style="width:100%;margin-top:8px">'+pixTxt+'</button></div>'+nb+'</div>';
+}
+function regrasCard(){
+  return '<div class="card"><h3>Regras de reposição e faltas</h3><ul class="rules"><li>Faltas avisadas com no mínimo 3 horas de antecedência podem ser repostas.</li><li>Para alunos que treinam das 6h às 9h da manhã, o aviso deve ser feito no dia anterior (salvo exceções, como acordar doente).</li></ul></div>';
+}
+function comoAgendarCard(){
+  return '<div class="card"><h3>Como agendar sua reposição</h3>'+
+    '<ol class="rules"><li>Selecione abaixo a aula pendente em <b>A agendar</b>.</li><li>Escolha no calendário o <b>dia desejado</b> para repor o treino (com no mínimo <b>12 horas de antecedência</b>).</li><li>Toque em um dos <b>horários disponíveis</b> (incluindo vagas liberadas por aviso prévio de outros alunos) para confirmar.</li></ol></div>';
+}
+function freqCard(a){
+  if(isOnl(a)){
+    return '<div class="card"><div class="row"><b>Acompanhamento Online</b><span class="tag ok">Ativo</span></div>'+
+      '<p class="mut" style="margin:6px 0 0">Mantenha a constância nos treinos da semana e envie seu feedback ao personal sempre que concluir o ciclo.</p></div>';
+  }
+  var now=new Date(),sun0=weekStartSun(now);
+  var wkDone=0,wkPlan=0;
+  for(var di=0;di<7;di++){
+    var cur=new Date(sun0.getFullYear(),sun0.getMonth(),sun0.getDate()+di);
+    var ds=iso(cur);
+    dayItems(ds,a.id).forEach(function(it){
+      if(!it.rep)wkPlan++;
+      if(S.reg[it.k]==='p')wkDone++;
+    });
+  }
+  var mPref=mes();
+  var yNum=parseInt(mPref.slice(0,4),10),mIdx=parseInt(mPref.slice(5,7),10)-1;
+  var daysInMonth=new Date(yNum,mIdx+1,0).getDate();
+  var mDone=0,mClosed=0;
+  for(var d=1;d<=daysInMonth;d++){
+    var dsM=mPref+'-'+pad(d);
+    dayItems(dsM,a.id).forEach(function(it){
+      var st=S.reg[it.k];
+      if(st==='p'){mDone++;mClosed++}
+      else if(st==='f'||st==='j'){mClosed++}
+    });
+  }
+  var pctMes=mClosed?Math.round((mDone/mClosed)*100):100;
+  var pctBar=wkPlan?Math.min(100,Math.round((wkDone/wkPlan)*100)):0;
+  var msg=wkPlan===0?'Seus horários fixos aparecerão aqui assim que a grade estiver ativa.':
+    (wkDone>=wkPlan?'Meta semanal concluída! Excelente constância nos treinos.':
+    (wkDone>0?'Bom ritmo! Faltam '+(wkPlan-wkDone)+' treino(s) para fechar sua meta da semana.':'Sua semana está aberta. Bora cumprir os '+wkPlan+' treino(s) programados!'));
+  return '<div class="card">'+
+    '<div class="row"><b>Frequência e constância</b><span class="tag ok">'+pctMes+'% no mês</span></div>'+
+    '<div class="big" style="margin-top:6px">'+wkDone+' de '+wkPlan+' treino(s) na semana</div>'+
+    '<div class="prog-track" role="progressbar" aria-valuenow="'+pctBar+'" aria-valuemin="0" aria-valuemax="100"><div class="prog-fill" style="width:'+pctBar+'%"></div></div>'+
+    '<div class="mut">'+esc(msg)+'</div>'+
+    '</div>';
+}
+function homeView(a){
+  var st=statusHoje(a),pend=S.rep.filter(function(r){return !r.data&&r.a===a.id}).length;
+  var h='<div class="greet"><h2>Seja bem-vindo(a), '+esc(a.nome)+'!</h2></div>';
+  h+='<div class="card hl"><span class="lbl">Treino de hoje</span><div class="big" style="margin-top:4px">'+esc(st.title)+'</div><div class="mut" style="margin-top:4px">'+esc(st.sub)+'</div>'+
+    (pend?'<div style="margin-top:8px"><b>Você tem '+pend+' reposição(ões) para agendar.</b> Veja na aba Reposições.</div>':'')+'</div>';
+  h+=freqCard(a);
+  h+=finCard(a);
+  h+=regrasCard();
+  return h;
+}
+function weekStartSun(dt){
+  var d=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate());
+  d.setDate(d.getDate()-d.getDay());
+  return d;
+}
+function aulasView(a){
+  if(!isPres(a))return '<div class="empty">Consultoria online: não há aulas na agenda.</div>';
+  var now=new Date(),tIso=hoje(),sun0=weekStartSun(now);
+  var h='<div class="row" style="margin-bottom:8px"><h2 class="h" style="margin:0">Semana de aulas (Dom → Sáb)</h2><span class="mut">Arraste p/ o lado ↔</span></div>';
+  h+='<div class="wk-strip">';
+  for(var w=0;w<4;w++){
+    var ws=new Date(sun0.getFullYear(),sun0.getMonth(),sun0.getDate()+w*7);
+    var we=new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()+6);
+    var wLbl=w===0?'Semana atual':(w===1?'Próxima semana':'Em '+w+' semanas');
+    h+='<div class="wk-pane">';
+    h+='<div class="row"><b>'+wLbl+'</b><span class="mut">'+pad(ws.getDate())+'/'+pad(ws.getMonth()+1)+' a '+pad(we.getDate())+'/'+pad(we.getMonth()+1)+'</span></div>';
+    h+='<div class="wk-grid">';
+    for(var di=0;di<7;di++){
+      var cur=new Date(ws.getFullYear(),ws.getMonth(),ws.getDate()+di);
+      var ds=iso(cur);
+      var its=dayItems(ds,a.id);
+      var cls='wk-day'+(ds===tIso?' today':'');
+      var sub='—';
+      if(its.length){
+        var hasP=its.some(function(it){return S.reg[it.k]==='p'});
+        var hasJ=its.some(function(it){return S.reg[it.k]==='j'});
+        var hasF=its.some(function(it){return S.reg[it.k]==='f'});
+        var hasRep=its.some(function(it){return it.rep});
+        if(hasP){cls+=' st-p';sub='Treinou'}
+        else if(hasJ){cls+=' st-j';sub='Repor'}
+        else if(hasF){cls+=' st-f';sub='Faltou'}
+        else if(hasRep){cls+=' st-rep';sub='Rep. '+its[0].h}
+        else{sub=its[0].h}
+      }
+      h+='<div class="'+cls+'"><span class="wd">'+DOW[di].slice(0,3)+'</span><span class="wn">'+pad(cur.getDate())+'</span><span class="ws">'+sub+'</span></div>';
+    }
+    h+='</div>';
+    h+='<div class="wk-leg">'+
+      '<span><i style="background:var(--ok)"></i>Treinou</span>'+
+      '<span><i style="background:#FFC700;border:1px solid #d4a300"></i>Falta avisada (repor)</span>'+
+      '<span><i style="background:var(--bad)"></i>Faltou s/ aviso</span>'+
+      '<span><i style="background:#14213D"></i>Reposição</span>'+
+    '</div>';
+    h+='</div>';
+  }
+  h+='</div>';
+
+  // Status do mês abaixo do calendário semanal
+  var mPref=mes();
+  var yNum=parseInt(mPref.slice(0,4),10),mIdx=parseInt(mPref.slice(5,7),10)-1;
+  var daysInMonth=new Date(yNum,mIdx+1,0).getDate();
+  var presCount=0,faltasAviso=0,faltasSemAviso=0;
+  for(var d=1;d<=daysInMonth;d++){
+    var dsM=mPref+'-'+pad(d);
+    dayItems(dsM,a.id).forEach(function(it){
+      var st=S.reg[it.k];
+      if(!it.rep){
+        if(st==='p')presCount++;
+        else if(st==='j')faltasAviso++;
+        else if(st==='f')faltasSemAviso++;
+      }
+    });
+  }
+  var repMes=S.rep.filter(function(r){return r.a===a.id&&r.data&&r.data.slice(0,7)===mPref});
+  var repRealizadas=repMes.filter(function(r){return S.reg['R'+r.id]==='p'}).length;
+  var repAgendadas=repMes.filter(function(r){return S.reg['R'+r.id]!=='p'}).length;
+
+  h+='<div class="card" style="margin-top:12px">';
+  h+='<div class="row"><h3>Status do mês · '+MESES[mIdx]+'</h3></div>';
+  h+='<div class="mstat">';
+  h+='<div class="mstat-box"><span class="mut">Presenças</span><b style="color:var(--ok)">'+presCount+'</b></div>';
+  h+='<div class="mstat-box"><span class="mut">Faltas ('+faltasAviso+' avisada · '+faltasSemAviso+' s/ aviso)</span><b style="color:var(--bad)">'+(faltasAviso+faltasSemAviso)+'</b></div>';
+  h+='<div class="mstat-box"><span class="mut">Reposições agendadas</span><b>'+repAgendadas+'</b></div>';
+  h+='<div class="mstat-box"><span class="mut">Reposições realizadas</span><b style="color:var(--ok)">'+repRealizadas+'</b></div>';
+  h+='</div></div>';
+
+  // Lista das próximas aulas para o aluno avisar falta com antecedência
+  var prox='';
+  for(var i=0;i<14;i++){
+    var b=new Date();b.setDate(b.getDate()+i);
+    var dStr=iso(b);
+    dayItems(dStr,a.id).forEach(function(it){prox+=itemCard(it,dStr,true)});
+  }
+  if(prox){
+    h+='<h2 class="h">Próximas aulas (avisar falta)</h2>'+prox;
+  }
+  return h;
+}
+function authView(){
+  var isReg=ui.authMode==='signup';
+  return '<div class="login"><div class="card"><h2>'+(isReg?'Criar conta':'Entrar no Diário')+'</h2>'+
+    '<p class="mut" style="margin:6px 0 14px">'+(isReg?'Cadastre seu e-mail e senha para acessar o aplicativo.':'Digite seu e-mail e senha cadastrados.')+'</p>'+
+    '<div class="f">'+
+    '<input class="w" id="auth-email" type="email" autocomplete="email" placeholder="Seu e-mail" onkeydown="if(event.key===\'Enter\')'+(isReg?'signUpEmail()':'signInEmail()')+'">'+
+    '<input class="w" id="auth-pass" type="password" autocomplete="'+(isReg?'new-password':'current-password')+'" placeholder="Sua senha" onkeydown="if(event.key===\'Enter\')'+(isReg?'signUpEmail()':'signInEmail()')+'">'+
+    '</div>'+
+    '<div class="err" role="alert">'+esc(ui.authErr)+'</div>'+
+    '<div class="btns" style="justify-content:center"><button class="b p" onclick="'+(isReg?'signUpEmail()':'signInEmail()')+'" style="width:100%">'+(isReg?'Cadastrar conta':'Entrar')+'</button></div>'+
+    '<div class="btns" style="justify-content:center"><button class="b sm" onclick="ui.authMode=\''+(isReg?'login':'signup')+'\';ui.authErr=\'\';snap()">'+(isReg?'Já tenho conta · Entrar':'Primeiro acesso · Criar conta')+'</button></div>'+
+    '</div></div>';
+}
+function loginView(){
+  if(!UID)return authView();
+  return '<div class="login"><div class="card"><h2>Bem-vindo(a)</h2>'+
+    '<p class="mut" style="margin:6px 0 14px">Digite o código de acesso de 6 dígitos que o seu personal passou para entrar na sua área.</p>'+
+    '<input id="l-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-label="Código de acesso" onkeydown="if(event.key===\'Enter\')claimCode()">'+
+    '<div class="err" role="alert">'+esc(ui.login)+'</div>'+
+    '<div class="btns" style="justify-content:center"><button class="b p" onclick="claimCode()" style="width:100%">Entrar</button></div>'+
+    '<div class="btns" style="justify-content:center"><button class="b sm" onclick="signOutApp()">Sair da conta</button></div></div></div>';
+}
+
+/* ---------- reposições (calendário) ---------- */
+function calHTML(list){
+  var m=ui.mon,t=hoje(),f1=new Date(m.y,m.m,1),days=new Date(m.y,m.m+1,0).getDate(),off=f1.getDay();
+  var hasRep={};list.forEach(function(r){hasRep[r.data]=1});
+  var h='<div class="cal-wrap"><div class="cal-hdr"><button class="b sm" onclick="monthNav(-1)" aria-label="Mês anterior">‹</button><h2>'+MESES[m.m]+' '+m.y+'</h2><button class="b sm" onclick="monthNav(1)" aria-label="Próximo mês">›</button></div>';
+  h+='<div class="cal">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(function(x){return '<div class="dw">'+x+'</div>'}).join('');
+  for(var i=0;i<off;i++)h+='<span></span>';
+  for(var d=1;d<=days;d++){
+    var ds=m.y+'-'+pad(m.m+1)+'-'+pad(d);
+    var cls=(ds===t?' today':'')+(ds===ui.day?' sel':'');
+    h+='<button class="'+cls.trim()+'" '+(ds<t?'disabled ':'')+'onclick="pickDay(\''+ds+'\')" aria-label="'+d+' de '+MESES[m.m]+'">'+d+(hasRep[ds]?'<span class="dot"></span>':'')+'</button>';
+  }
+  return h+'</div></div>';
+}
+function monthNav(d){
+  var m=ui.mon,n=new Date(m.y,m.m+d,1),c=new Date();
+  if(n<new Date(c.getFullYear(),c.getMonth(),1))return;
+  ui.mon={y:n.getFullYear(),m:n.getMonth()};
+  snap();
+}
+function pickDay(ds){ui.day=ds;snap()}
+function repArea(aluno){
+  var t=hoje();
+  if(!ui.mon){var n=new Date();ui.mon={y:n.getFullYear(),m:n.getMonth()}}
+  if(!ui.day||ui.day<t)ui.day=t;
+  ui.scope=aluno?aluno.id:null;
+  var inScope=function(r){return isPres(al(r.a))&&(!aluno||r.a===aluno.id)};
+  var pend=S.rep.filter(function(r){return !r.data&&inScope(r)});
+  var all=S.rep.filter(function(r){return r.data&&inScope(r)});
+  var sch=all.filter(function(r){return r.data>=t}).sort(function(x,y){return x.data<y.data?-1:x.data>y.data?1:(x.h<y.h?-1:x.h>y.h?1:0)});
+  if(ui.sel&&!pend.some(function(r){return r.id===ui.sel}))ui.sel=null;
+  var pick=pickId(ui.scope),slots=slotsFor(ui.day,aluno?12:0);
+  var h=aluno?comoAgendarCard():'';
+  h+='<div class="card">'+calHTML(all)+'</div>';
+  h+='<div class="card"><div class="row"><b>Horários livres · '+fd(ui.day)+'</b>'+(aluno?'<span class="mut">Mín. 12h antes</span>':'')+'</div>';
+  if(!pend.length)h+='<p class="mut" style="margin:8px 0 0">Nenhuma reposição pendente para agendar.</p>';
+  else if(!pick)h+='<p class="mut" style="margin:8px 0 0">Escolha abaixo a reposição que vai agendar.</p>';
+  h+='<div class="slots" style="margin-top:10px">'+(slots.length?slots.map(function(s){return '<button '+(pick?'':'disabled ')+'onclick="schedSlot(\''+s+'\')">'+s+'</button>'}).join(''):'<span class="mut">Sem horários livres neste dia'+(aluno?' (respeitando 12h de antecedência)':'')+'.</span>')+'</div>';
+  if(!aluno)h+='<div class="btns" style="margin-top:12px"><input id="rep-extra" type="time" aria-label="Horário extra"><button class="b sm" '+(pick?'':'disabled ')+'onclick="schedExtra()">Agendar em horário extra</button></div>';
+  h+='</div>';
+  if(pend.length){
+    h+='<h2 class="h">A agendar ('+pend.length+')</h2>'+pend.map(function(r){
+      var a=al(r.a),on=pick===r.id;
+      return '<div class="card"><div class="row"><b>'+(aluno?'Aula perdida':esc(a?a.nome:''))+'</b><span class="mut">'+(r.orig?'Falta em '+fd(r.orig):'')+'</span></div><div class="btns"><button class="b sm '+(on?'p':'')+'" onclick="selRep(\''+r.id+'\')">'+(on?'Selecionada':'Selecionar para agendar')+'</button></div></div>';
+    }).join('');
+  }
+  h+='<h2 class="h">Agendadas ('+sch.length+')</h2>'+(sch.length?sch.map(function(r){
+    var a=al(r.a);
+    return '<div class="card"><div class="row"><b>'+(aluno?'Minha reposição':esc(a?a.nome:''))+'</b><span class="tag rep">'+fd(r.data)+' às '+r.h+'</span></div><div class="btns"><button class="b sm" onclick="unsched(\''+r.id+'\')">Desmarcar</button></div></div>';
+  }).join(''):'<div class="empty">Nada agendado.</div>');
+  return h;
+}
+
+/* ---------- telas do personal ---------- */
+function vAgenda(){
+  var its=dayItems(ui.date,null);
+  var activeDow=ui.repDow!==null?ui.repDow:pd(ui.date).getDay();
+  var manualList=(S.repSlots&&Array.isArray(S.repSlots[activeDow]))?S.repSlots[activeDow]:[];
+  var baseHours=[];
+  for(var hh=6;hh<=21;hh++)baseHours.push(pad(hh)+':00');
+
+  var h='<div class="date"><button class="b sm" onclick="go(-1)" aria-label="Dia anterior">‹</button><h2>'+(ui.date===hoje()?'Hoje · ':'')+fd(ui.date)+'</h2><button class="b sm" onclick="go(1)" aria-label="Próximo dia">›</button></div>';
+  if(ui.date!==hoje())h+='<div style="text-align:center;margin-bottom:10px"><button class="b sm" onclick="goHoje()">Voltar para hoje</button></div>';
+  h+=its.length?its.map(function(i){return itemCard(i,ui.date,false)}).join(''):'<div class="empty">Nenhuma aula presencial neste dia.</div>';
+
+  // Painel de disponibilização manual de horários para reposição por dia da semana
+  h+='<div class="card" style="margin-top:16px">';
+  h+='<div class="row"><h3>Horários disponíveis para reposição</h3><span class="tag rep">'+manualList.length+' ativo(s)</span></div>';
+  h+='<p class="mut" style="margin:6px 0 0">Selecione o dia da semana e toque nos horários que deseja liberar na aba Reposições dos alunos.</p>';
+  h+='<div class="dow-pills">'+DOW.map(function(d,i){
+    return '<button class="'+(activeDow===i?'on':'')+'" onclick="ui.repDow='+i+';snap()">'+d.slice(0,3)+'</button>';
+  }).join('')+'</div>';
+  h+='<div class="mut">Configurando: <b>'+DOW[activeDow]+'</b></div>';
+  h+='<div class="slot-tog">'+baseHours.map(function(hr){
+    var on=manualList.indexOf(hr)>=0;
+    return '<button class="'+(on?'on':'')+'" onclick="toggleRepSlotDow('+activeDow+',\''+hr+'\')">'+hr+'</button>';
+  }).join('')+'</div>';
+  h+='</div>';
+  return h;
+}
+function vAlunos(){
+  var h='<div class="card"><h3>Novo aluno</h3><div class="f" style="margin-top:8px">'+
+    '<input class="w" id="f-nome" placeholder="Nome completo">'+
+    '<input id="f-tel" inputmode="tel" placeholder="WhatsApp com DDD">'+
+    '<input id="f-valor" inputmode="decimal" placeholder="Mensalidade (R$)">'+
+    '<input class="w" id="f-venc" inputmode="numeric" placeholder="Dia do vencimento (1 a 28)">'+
+    '</div><div class="btns"><button class="b p" onclick="addAluno()">Salvar aluno</button></div></div>';
+  if(!S.alunos.length)return h+'<div class="empty">Nenhum aluno cadastrado ainda.</div>';
+  var linked=linkedIds();
+  S.alunos.slice().sort(byNome).forEach(function(a){
+    var ln=linked[a.id],cod=codeOf(a),tel=telOf(a),editing=ui.editAlunoId===a.id;
+    var grade=S.aulas.filter(function(x){return x.a===a.id}).sort(sortAula);
+    h+='<div class="card"><div class="row"><b>'+esc(a.nome)+'</b><span class="tag '+(ln?'ok':'')+'">'+(ln?'Vinculado':'Aguardando')+'</span></div>'+
+      '<div class="mut" style="margin-top:4px">'+brl(a.valor)+' · vence dia '+a.venc+' · Código <b>'+esc(cod)+'</b>'+(tel?' · WhatsApp '+esc(tel):'')+'</div>';
+    if(editing){
+      h+='<div class="f" style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--ln)">'+
+        '<input class="w" id="e-nome-'+a.id+'" value="'+esc(a.nome)+'" placeholder="Nome completo">'+
+        '<input id="e-tel-'+a.id+'" inputmode="tel" value="'+esc(tel)+'" placeholder="WhatsApp com DDD">'+
+        '<input id="e-valor-'+a.id+'" inputmode="decimal" value="'+esc(a.valor||'')+'" placeholder="Mensalidade (R$)">'+
+        '<input class="w" id="e-venc-'+a.id+'" inputmode="numeric" value="'+esc(a.venc||10)+'" placeholder="Dia do vencimento (1 a 28)">'+
+        '</div><div class="btns"><button class="b sm p" onclick="saveEditAluno(\''+a.id+'\')">Salvar alterações</button><button class="b sm" onclick="startEditAluno(\''+a.id+'\')">Cancelar</button></div>';
+    }
+    h+='<div style="margin-top:8px">'+(grade.map(chip).join('')||'<span class="mut">Sem horários na grade.</span>')+'</div>'+
+      '<div class="btns"><select id="sd'+a.id+'" aria-label="Dia da semana">'+DOW.map(function(d,i){return '<option value="'+i+'">'+d+'</option>'}).join('')+'</select><input type="time" id="sh'+a.id+'" value="07:00" aria-label="Horário"><button class="b sm p" onclick="addAula(\''+a.id+'\')">Adicionar horário</button></div>';
+    h+='<div class="btns">'+
+      '<button class="b sm wa" onclick="abrirWhatsAppAluno(\''+a.id+'\')">WhatsApp</button>'+
+      '<button class="b sm" onclick="startEditAluno(\''+a.id+'\')">'+(editing?'Fechar edição':'Editar dados')+'</button>'+
+      '<button class="b sm" onclick="rmAluno(\''+a.id+'\')">Excluir</button>'+
+      '</div></div>';
+  });
+  return h;
+}
+function listaPagto(lst,online){
+  if(!lst.length)return '<div class="empty">'+(online?'Nenhum aluno de consultoria online ainda. Cadastre um aluno como Online na aba Alunos.':'Nenhum aluno presencial cadastrado.')+'</div>';
+  var rec=0,ab=0;
+  lst.forEach(function(a){if(pay(a).s==='pago')rec+=a.valor||0;else ab+=a.valor||0});
+  var linked=linkedIds();
+  var h='<div class="sum"><div class="card"><span class="mut">Recebido no mês</span><b>'+brl(rec)+'</b></div><div class="card"><span class="mut">Em aberto</span><b>'+brl(ab)+'</b></div></div>';
+  lst.slice().sort(function(x,y){return ord(x)-ord(y)}).forEach(function(a){
+    var p=pay(a),pg=p.s==='pago',ln=linked[a.id],cod=codeOf(a);
+    h+='<div class="card"><div class="row"><b>'+esc(a.nome)+'</b>'+payTxt(a)+'</div>'+
+      '<div class="mut" style="margin-top:4px">'+brl(a.valor)+' · vencimento '+dmy(p.due)+'</div>'+
+      (online?'<div class="mut" style="margin-top:4px">Código <b>'+esc(cod)+'</b> · <span class="tag '+(ln?'ok':'')+'">'+(ln?'Acessou':'Aguardando acesso')+'</span></div>':'')+
+      '<div class="btns"><button class="b sm '+(pg?'':'p')+'" onclick="togglePay(\''+a.id+'\')">'+(pg?'Desfazer pagamento':'Marcar como pago')+'</button>'+
+      (pg?'':'<button class="b sm" onclick="cobrar(\''+a.id+'\')">Cobrar no WhatsApp</button>')+
+      (online?'<button class="b sm" onclick="enviarCodigo(\''+a.id+'\')">Enviar código</button>':'')+'</div></div>';
+  });
+  return h;
+}
+
+/* ---------- navegação e renderização ---------- */
+function personalView(){
+  var late=S.alunos.filter(function(a){return pay(a).s==='atrasado'}).length;
+  var h=(late&&ui.tab!=='pag')?'<div class="alert">'+late+' aluno(s) com mensalidade atrasada. Veja Pagamentos.</div>':'';
+  if(ui.tab==='alunos')return h+vAlunos();
+  if(ui.tab==='rep')return h+repArea(null);
+  if(ui.tab==='pag')return h+listaPagto(S.alunos.filter(isPres),false);
+  return h+vAgenda();
+}
+function toggleNotifPop(){
+  ui.notifOpen=!ui.notifOpen;
+  renderBell();
+}
+async function toggleReadNotif(id){
+  var item=ui.feed.find(function(x){return x.id===id});
+  if(!item)return;
+  item.read=!item.read;
+  await persistFeedState();
+}
+async function markAllNotifRead(){
+  ui.feed.forEach(function(x){x.read=true});
+  await persistFeedState();
+}
+async function clearNotifFeed(){
+  ui.feed=[];
+  ui.unread=0;
+  ui.notifOpen=false;
+  await persistFeedState();
+}
+function renderBell(){
+  var btn=document.getElementById('bell-fab');
+  var badge=document.getElementById('bell-badge');
+  var pop=document.getElementById('notif-pop');
+  if(!btn||!badge||!pop)return;
+  var show=!!UID&&OWNER&&ui.role==='p';
+  btn.hidden=!show;
+  if(!show){pop.hidden=true;return}
+  ui.unread=ui.feed.filter(function(x){return !x.read}).length;
+  badge.hidden=ui.unread<=0;
+  badge.textContent=ui.unread>9?'9+':String(ui.unread);
+  pop.hidden=!ui.notifOpen;
+  if(ui.notifOpen){
+    var items=ui.feed.length?ui.feed.map(function(ev){
+      var cls=ev.read?'notif-item read':'notif-item unread';
+      var statusBadge=ev.read?'Lida':'Não lida';
+      return '<div class="'+cls+'" onclick="toggleReadNotif(\''+esc(ev.id)+'\')" title="Toque para alternar entre lida e não lida">'+
+        '<div class="row"><span class="n-title">'+(ev.read?'':'<span class="n-dot"></span>')+esc(ev.aluno)+'</span><span class="mut" style="font-size:12px">'+esc(ev.hora)+' · '+statusBadge+'</span></div>'+
+        '<div class="n-msg" style="margin-top:3px">'+esc(ev.msg)+'</div>'+
+      '</div>';
+    }).join(''):'<div class="mut" style="padding:8px 0">Nenhuma alteração registrada pelos alunos ainda.</div>';
+    pop.innerHTML='<div class="row" style="margin-bottom:6px"><b>Últimas atualizações</b><div class="btns" style="margin-top:0">'+
+      (ui.unread>0?'<button class="b sm" onclick="markAllNotifRead()">Ler tudo</button>':'')+
+      (ui.feed.length?'<button class="b sm" onclick="clearNotifFeed()">Limpar</button>':'')+
+      '</div></div>'+items;
+  }
+}
+function detectChanges(){
+  var curReg=Object.assign({},S.reg);
+  var curRep={};
+  S.rep.forEach(function(r){curRep[r.id]={a:r.a,data:r.data||'',h:r.h||'',orig:r.orig||''}});
+  if(!prevSnap){
+    prevSnap={reg:curReg,rep:curRep};
+    return;
+  }
+  var now=new Date(),hm=pad(now.getDate())+'/'+pad(now.getMonth()+1)+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  var added=0;
+  Object.keys(curReg).forEach(function(k){
+    if(prevSnap.reg[k]!==curReg[k]&&curReg[k]){
+      var aid=k.charAt(0)==='R'?(S.rep.find(function(r){return r.id===k.slice(1)})||{}).a:k.split('|')[0];
+      var a=al(aid);
+      if(!a)return;
+      var dtStr=k.charAt(0)==='R'?'':fd(k.split('|')[1])+' às '+k.split('|')[2];
+      var desc=curReg[k]==='j'?'Avisou que vai faltar'+(dtStr?' ('+dtStr+')':''):
+               (curReg[k]==='p'?'Presença confirmada'+(dtStr?' ('+dtStr+')':''):'Falta registrada'+(dtStr?' ('+dtStr+')':''));
+      var dup=ui.feed.some(function(f){return f.aluno===a.nome&&f.msg.indexOf(desc)===0&&!f.read});
+      if(!dup){
+        ui.feed.unshift({id:'n_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),aluno:a.nome,msg:desc,hora:hm,read:false});
+        added++;
+      }
+    }
+  });
+  Object.keys(curRep).forEach(function(id){
+    var prev=prevSnap.rep[id],cur=curRep[id];
+    var a=al(cur.a);
+    if(!a)return;
+    var msgTxt='';
+    if((!prev||!prev.data)&&cur.data){
+      msgTxt='Agendou reposição para '+fd(cur.data)+' às '+cur.h+'.';
+    }else if(prev&&prev.data&&!cur.data){
+      msgTxt='Desmarcou reposição de '+fd(prev.data)+' às '+prev.h+'.';
+    }
+    if(msgTxt){
+      var dupR=ui.feed.some(function(f){return f.aluno===a.nome&&f.msg===msgTxt&&!f.read});
+      if(!dupR){
+        ui.feed.unshift({id:'n_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),aluno:a.nome,msg:msgTxt,hora:hm,read:false});
+        added++;
+      }
+    }
+  });
+  if(ui.feed.length>40)ui.feed.length=40;
+  if(added>0)persistFeedState();
+  prevSnap={reg:curReg,rep:curRep};
+}
+function picker(){
+  return '<div class="card"><label class="mut" for="pk">Visualizando como</label><br><select id="pk" onchange="ui.aluno=this.value;snap()">'+
+    S.alunos.slice().sort(byNome).map(function(a){return '<option value="'+a.id+'"'+(a.id===ui.aluno?' selected':'')+'>'+esc(a.nome)+'</option>'}).join('')+'</select></div>';
+}
+function studentView(){
+  var a=myAluno();
+  if(!a)return OWNER?'<div class="empty">Cadastre um aluno para visualizar a área do aluno.</div>':loginView();
+  var pk=OWNER?picker():'';
+  if(ui.tab==='aulas')return pk+aulasView(a);
+  if(ui.tab==='rep')return pk+repArea(a);
+  return pk+homeView(a);
+}
+function render(){
+  var app=document.getElementById('app');
+  var seg=document.getElementById('seg');
+  var nav=document.getElementById('nav');
+  if(!UID){
+    seg.hidden=true;
+    nav.innerHTML='';
+    document.body.classList.remove('nav-on');
+    document.getElementById('fab').hidden=true;
+    document.getElementById('brand').textContent='Diário do Personal';
+    app.innerHTML=authView();
+    return;
+  }
+  if(!OWNER)ui.role='a';
+  var T=TABS[ui.role];
+  if(!T.some(function(x){return x[0]===ui.tab}))ui.tab=T[0][0];
+  document.getElementById('brand').textContent=ui.role==='a'?'Danilo Luiz / Personal Trainer':'Diário do Personal';
+  if(OWNER){
+    seg.hidden=false;
+    seg.innerHTML='<button onclick="signOutApp()">Sair</button>';
+  }else seg.hidden=true;
+  app.innerHTML=ui.role==='p'?personalView():studentView();
+  var showNav=ui.role==='p'||!!myAluno();
+  nav.innerHTML=showNav?T.map(function(x){
+    return '<button class="'+(ui.tab===x[0]?'on':'')+'" onclick="tab(\''+x[0]+'\')"><span class="i">'+x[1]+'</span>'+x[2]+'</button>';
+  }).join(''):'';
+  document.body.classList.toggle('nav-on',showNav);
+  document.getElementById('fab').hidden=ui.role!=='a';
+  renderBell();
+}
+function snap(){
+  var keep={};
+  document.querySelectorAll('#app input, #app select').forEach(function(el){if(el.id&&el.type!=='checkbox')keep[el.id]=el.value});
+  var y=window.scrollY;
+  render();
+  Object.keys(keep).forEach(function(id){var el=document.getElementById(id);if(el)el.value=keep[id]});
+  window.scrollTo(0,y);
+}
+function tab(t){ui.tab=t;render();window.scrollTo(0,0)}
+function role(r){ui.role=r;ui.tab=TABS[r][0][0];ui.login='';render();window.scrollTo(0,0)}
+function go(d){var b=pd(ui.date);b.setDate(b.getDate()+d);ui.date=iso(b);ui.repDow=pd(ui.date).getDay();render();window.scrollTo(0,0)}
+function goHoje(){ui.date=hoje();ui.repDow=pd(ui.date).getDay();render()}
+
+function notify(){
+  try{
+    if(!('Notification' in window)||Notification.permission!=='granted')return;
+    var t=hoje();
+    if(S.lemb===t)return;
+    var l=[];
+    if(OWNER){
+      l=S.alunos.filter(function(a){var p=pay(a);return p.s==='atrasado'||(p.s==='aberto'&&p.d<=3)});
+    }else{
+      var me=myAluno();
+      if(me){var p=pay(me);if(p.s==='atrasado'||(p.s==='aberto'&&p.d<=3))l=[me]}
+    }
+    if(!l.length)return;
+    S.lemb=t;
+    try{localStorage.setItem('diario_personal_l',t)}catch(e){}
+    new Notification('Diário do Personal',{body:OWNER?l.length+' mensalidade(s) vencendo ou atrasadas.':'Sua mensalidade está próxima do vencimento.'});
+  }catch(e){}
+}
+
+async function refreshAll(){
+  if(!UID)return;
+  var admRes=await sb.from('admins').select('user_id').eq('user_id',UID).maybeSingle();
+  OWNER=!!(admRes.data&&admRes.data.user_id);
+  ui.role=OWNER?(ui.role||'p'):'a';
+
+  var cfgRes=await sb.from('app_config').select('chave,valor').in('chave',['pix_key','rep_slots_dow']);
+  (cfgRes.data||[]).forEach(function(row){
+    if(row.chave==='pix_key'&&row.valor)PIX=row.valor;
+    if(row.chave==='rep_slots_dow'&&row.valor){
+      try{
+        var parsed=JSON.parse(row.valor);
+        if(parsed&&typeof parsed==='object'){S.repSlots=parsed;saveLocalRepSlots()}
+      }catch(e){}
+    }
+  });
+  if(!S.repSlots||!Object.keys(S.repSlots).length){
+    var loc=loadLocalRepSlots();
+    if(loc)S.repSlots=loc;
+  }
+
+  var alunosRes=await sb.from('alunos').select('id,nome,tipo,valor,venc');
+  S.alunos=(alunosRes.data||[]).map(function(x){
+    return {id:x.id,nome:x.nome,tipo:x.tipo,valor:Number(x.valor||0),venc:Number(x.venc||10)};
+  });
+
+  var aulasRes=await sb.from('aulas').select('id,aluno_id,dow,hora');
+  S.aulas=(aulasRes.data||[]).map(function(x){
+    return {id:x.id,a:x.aluno_id,dow:Number(x.dow),h:normTime(x.hora)};
+  });
+
+  var repRes=await sb.from('reposicoes').select('id,aluno_id,falta_data,falta_hora,data,hora');
+  S.rep=(repRes.data||[]).map(function(r){
+    return {id:r.id,a:r.aluno_id,orig:r.falta_data,data:r.data||null,h:r.hora?normTime(r.hora):null};
+  });
+
+  var presRes=await sb.from('presencas').select('aluno_id,data,hora,status,is_reposicao');
+  S.reg={};
+  (presRes.data||[]).forEach(function(p){
+    var hh=normTime(p.hora);
+    var k=p.aluno_id+'|'+p.data+'|'+hh;
+    S.reg[k]=p.status;
+    if(p.is_reposicao){
+      var matched=S.rep.find(function(r){return r.a===p.aluno_id&&r.data===p.data&&r.h===hh});
+      if(matched)S.reg['R'+matched.id]=p.status;
+    }
+  });
+
+  var pagRes=await sb.from('pagamentos').select('aluno_id,mes');
+  S.pagos={};
+  (pagRes.data||[]).forEach(function(pg){
+    S.pagos[pg.aluno_id+'|'+pg.mes]=pg.aluno_id+'|'+pg.mes;
+  });
+
+  var vincRes=await sb.from('vinculos').select('user_id,aluno_id');
+  S.vinc={};
+  (vincRes.data||[]).forEach(function(v){
+    S.vinc[v.user_id]=v.aluno_id;
+  });
+
+  S.tel={};
+  S.codigos={};
+  if(OWNER){
+    var contRes=await sb.from('contatos').select('aluno_id,telefone');
+    (contRes.data||[]).forEach(function(c){if(c.telefone)S.tel[c.aluno_id]=c.telefone});
+
+    var codRes=await sb.from('codigos_acesso').select('aluno_id,codigo');
+    (codRes.data||[]).forEach(function(c){if(c.codigo)S.codigos[c.aluno_id]=c.codigo});
+  }
+
+  loaded=true;
+  if(OWNER){
+    await syncFeedFromCloud();
+    detectChanges();
+  }
+  if(!notified){notified=true;notify()}
+  snap();
+}
+
+(async function boot(){
+  ui.date=hoje();
+  try{S.lemb=localStorage.getItem('diario_personal_l')||''}catch(e){}
+
+  sb.auth.onAuthStateChange(async function(_event,session){
+    SESSION=session;
+    UID=session&&session.user?session.user.id:null;
+    if(UID){
+      await refreshAll();
+      if(!pollTimer)pollTimer=setInterval(refreshAll,20000);
+    }else{
+      OWNER=false;
+      if(pollTimer){clearInterval(pollTimer);pollTimer=null}
+      render();
+    }
+  });
+
+  var cur=await sb.auth.getSession();
+  SESSION=cur.data&&cur.data.session?cur.data.session:null;
+  UID=SESSION&&SESSION.user?SESSION.user.id:null;
+  if(UID){
+    await refreshAll();
+    pollTimer=setInterval(refreshAll,20000);
+  }else{
+    render();
+  }
+})();
+</script>
+</body>
+</html>
