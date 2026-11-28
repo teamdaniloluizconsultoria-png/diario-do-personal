@@ -475,6 +475,42 @@ input:focus,select:focus{
 .slots button:not(:disabled):hover{background:var(--btn-p-bg);color:var(--btn-p-ink);border-color:transparent}
 .slots button:not(:disabled):active{transform:scale(.96)}
 
+/* Swipe para a esquerda em A agendar (Personal) */
+.swipe-wrap{
+  position:relative;
+  margin-bottom:12px;
+  border-radius:22px;
+  overflow:hidden;
+  max-height:300px;
+  transition:max-height .22s ease,opacity .22s ease,margin-bottom .22s ease;
+}
+.swipe-wrap.removing{
+  opacity:0!important;
+  max-height:0!important;
+  margin-bottom:0!important;
+}
+.swipe-bg{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,rgba(220,38,38,.08) 0%,var(--bad) 55%);
+  color:#FFFFFF;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  padding:0 22px;
+  font:700 14px var(--font-sans);
+  gap:6px;
+  opacity:0;
+  pointer-events:none;
+}
+.swipe-fg{
+  position:relative;
+  z-index:1;
+  margin-bottom:0!important;
+  touch-action:pan-y;
+  will-change:transform;
+}
+
 .login{max-width:420px;margin:20px auto 0;text-align:center}
 .login-brand{display:flex;flex-direction:column;align-items:center;margin-bottom:14px}
 .login-brand svg{width:64px;height:64px;filter:drop-shadow(0 8px 18px rgba(17,19,24,.10))}
@@ -831,8 +867,8 @@ function toggleTheme(){
   applyTheme(isDarkTheme()?'light':'dark');
 }
 
-var S={personalId:null,perfil:null,alunos:[],aulas:[],reg:{},rep:[],pagos:{},vinc:{},tel:{},codigos:{},repSlots:{},occPersonal:[],adminPersonais:[],lemb:''};
-var ui={role:'p',tab:'agenda',date:'',repDow:null,aluno:null,editAlunoId:null,editPerfil:false,mon:null,day:'',sel:null,scope:null,maxMonth:null,login:'',authErr:'',authMode:'login',authRole:'aluno',pixAt:0,notifOpen:false,feed:[],unread:0,aulasMes:'cur'};
+var S={personalId:null,perfil:null,alunos:[],aulas:[],reg:{},rep:[],pagos:{},vinc:{},tel:{},codigos:{},repSlots:{},occPersonal:[],adminPersonais:[],repDismissed:{},lemb:''};
+var ui={role:'p',tab:'agenda',date:'',repDow:null,aluno:null,editAlunoId:null,editPerfil:false,mon:null,day:'',sel:null,scope:null,maxDate:null,maxMonth:null,login:'',authErr:'',authMode:'login',authRole:'aluno',pixAt:0,notifOpen:false,feed:[],unread:0,aulasMes:'cur'};
 var SESSION=null,UID=null,OWNER=false,loaded=false,notified=false,pollTimer=null,prevSnap=null,rtChannel=null,rtFilterKey=null,isRefreshing=false,refreshQueued=false;
 
 /* ---------- caixa de mensagem sem alert/confirm nativo ---------- */
@@ -864,7 +900,14 @@ function isPres(a){return !!a&&(a.tipo||'presencial')!=='online'}
 function isOnl(a){return !!a&&a.tipo==='online'}
 function mes(){return hoje().slice(0,7)}
 function prevMes(){var d=new Date(),p=new Date(d.getFullYear(),d.getMonth()-1,1);return p.getFullYear()+'-'+pad(p.getMonth()+1)}
-function repMesRef(r){return (r&&r.orig)?String(r.orig).slice(0,7):mes()}
+
+/* ---------- regra de validade de 15 dias para reposições ---------- */
+function repPrazo(r){
+  var orig=(r&&r.orig)?String(r.orig):hoje();
+  var d=pd(orig);
+  d.setDate(d.getDate()+15);
+  return iso(d);
+}
 function isPendAtiva(r){
   if(!r||r.data)return false;
   if(!r.orig)return true;
@@ -872,7 +915,36 @@ function isPendAtiva(r){
   var pref=r.a+'|'+r.orig+'|';
   return Object.keys(S.reg).some(function(k){return k.indexOf(pref)===0&&S.reg[k]==='j'});
 }
-function isRepValidaAluno(r){return isPendAtiva(r)&&repMesRef(r)>=mes()}
+function isRepValidaAluno(r){return isPendAtiva(r)&&repPrazo(r)>=hoje()}
+
+/* ---------- ocultação visual de "A agendar" apenas na tela do Personal ---------- */
+function repHideKey(){return 'diario_personal_rep_hide_'+(UID||'default')}
+function loadRepDismissed(){
+  try{
+    var raw=localStorage.getItem(repHideKey());
+    if(raw){
+      var obj=JSON.parse(raw);
+      if(obj&&typeof obj==='object')return obj;
+    }
+  }catch(e){}
+  return {};
+}
+function saveRepDismissed(){
+  try{localStorage.setItem(repHideKey(),JSON.stringify(S.repDismissed||{}))}catch(e){}
+}
+function dismissRepItem(id){
+  if(!S.repDismissed)S.repDismissed={};
+  S.repDismissed[id]=hoje();
+  if(ui.sel===id)ui.sel=null;
+  saveRepDismissed();
+  snap();
+}
+function restoreDismissedRep(){
+  S.repDismissed={};
+  saveRepDismissed();
+  snap();
+}
+
 function telOf(a){return S.tel[a.id]||''}
 function codeOf(a){return S.codigos[a.id]||''}
 function firstName(a){return String(a&&a.nome?a.nome:'').split(' ')[0]}
@@ -1033,9 +1105,14 @@ function slotsFor(date,minHours){
   });
 }
 function pickId(aid){
+  var t=hoje();
   var pend=S.rep.filter(function(r){
     if(!isPendAtiva(r)||!isPres(al(r.a)))return false;
-    if(aid&&(r.a!==aid||!isRepValidaAluno(r)))return false;
+    if(aid){
+      if(r.a!==aid||!isRepValidaAluno(r))return false;
+    }else{
+      if(repPrazo(r)<t||(S.repDismissed&&S.repDismissed[r.id]))return false;
+    }
     return true;
   });
   if(ui.sel&&pend.some(function(r){return r.id===ui.sel}))return ui.sel;
@@ -1231,17 +1308,17 @@ async function schedSlot(h){
   if(!id){showMsg('Escolha primeiro a reposição que vai agendar.');return}
   var targetRep=S.rep.find(function(r){return r.id===id});
   if(ui.scope){
-    var targetMonth=repMesRef(targetRep);
-    if(targetMonth<mes()){
-      showMsg('Este crédito pertence a um mês anterior e expirou (não acumula para o mês seguinte).');
+    var prazo=repPrazo(targetRep);
+    if(hoje()>prazo){
+      showMsg('Este crédito expirou após o prazo de 15 dias.');
       return;
     }
     if(ui.day<hoje()){
       showMsg('Não é possível agendar reposição em data passada.');
       return;
     }
-    if(ui.day.slice(0,7)!==targetMonth){
-      showMsg('A reposição só pode ser agendada dentro do próprio mês (não acumula para o mês seguinte).');
+    if(ui.day>prazo){
+      showMsg('A reposição deve ser realizada dentro do prazo de 15 dias a partir da falta (até '+dmy(prazo)+').');
       return;
     }
     var slotDt=new Date(ui.day+'T'+normTime(h)+':00');
@@ -1417,9 +1494,9 @@ async function signOutApp(){
   if(rtChannel){try{sb.removeChannel(rtChannel)}catch(e){}rtChannel=null;rtFilterKey=null}
   await sb.auth.signOut();
   SESSION=null;UID=null;OWNER=false;loaded=false;prevSnap=null;
-  S={personalId:null,perfil:null,alunos:[],aulas:[],reg:{},rep:[],pagos:{},vinc:{},tel:{},codigos:{},repSlots:{},occPersonal:[],adminPersonais:[],lemb:''};
+  S={personalId:null,perfil:null,alunos:[],aulas:[],reg:{},rep:[],pagos:{},vinc:{},tel:{},codigos:{},repSlots:{},occPersonal:[],adminPersonais:[],repDismissed:{},lemb:''};
   ui.feed=[];ui.unread=0;ui.notifOpen=false;ui.editPerfil=false;ui.editAlunoId=null;
-  ui.aluno=null;ui.sel=null;ui.scope=null;ui.aulasMes='cur';
+  ui.aluno=null;ui.sel=null;ui.scope=null;ui.maxDate=null;ui.maxMonth=null;ui.aulasMes='cur';
   render();
 }
 
@@ -1501,11 +1578,11 @@ function finCard(a){
     '</div>'+nb+'</div>';
 }
 function regrasCard(){
-  return '<div class="card"><h3>Regras de reposição e faltas</h3><ul class="rules"><li>Faltas avisadas com no mínimo 3 horas de antecedência podem ser repostas.</li><li>Para alunos que treinam das 6h às 9h da manhã, o aviso deve ser feito no dia anterior (salvo exceções, como acordar doente).</li><li>Aulas em haver (créditos de reposição) pertencem exclusivamente ao mês corrente e <b>não acumulam</b> para o mês seguinte.</li></ul></div>';
+  return '<div class="card"><h3>Regras de reposição e faltas</h3><ul class="rules"><li>Faltas avisadas com no mínimo 3 horas de antecedência podem ser repostas.</li><li>Para alunos que treinam das 6h às 9h da manhã, o aviso deve ser feito no dia anterior (salvo exceções, como acordar doente).</li><li>Você tem até <b>15 dias</b> a partir da data da falta para realizar a reposição. Após 15 dias, o crédito expira.</li></ul></div>';
 }
 function comoAgendarCard(){
   return '<div class="card"><h3>Como agendar sua reposição</h3>'+
-    '<ol class="rules"><li>Selecione abaixo a aula pendente em <b>A agendar</b>.</li><li>Escolha no calendário o <b>dia desejado dentro do mesmo mês</b> para repor o treino (créditos não acumulam para o mês seguinte e exigem no mínimo <b>12 horas de antecedência</b>).</li><li>Toque em um dos <b>horários disponíveis</b> (incluindo vagas liberadas por aviso prévio de outros alunos) para confirmar.</li></ol></div>';
+    '<ol class="rules"><li>Selecione abaixo a aula pendente em <b>A agendar</b>.</li><li>Escolha no calendário um <b>dia disponível dentro do prazo de 15 dias</b> após a falta (exige no mínimo <b>12 horas de antecedência</b>).</li><li>Toque em um dos <b>horários disponíveis</b> (incluindo vagas liberadas por aviso prévio de outros alunos) para confirmar.</li></ol></div>';
 }
 function freqCard(a){
   if(isOnl(a)){
@@ -1550,7 +1627,7 @@ function homeView(a){
   var st=statusHoje(a),pend=S.rep.filter(function(r){return r.a===a.id&&isRepValidaAluno(r)}).length;
   var h='<div class="greet"><h2>Seja bem-vindo(a), '+esc(a.nome)+'!</h2></div>';
   h+='<div class="card hl"><span class="lbl">Treino de hoje</span><div class="big" style="margin-top:4px">'+esc(st.title)+'</div><div class="mut" style="margin-top:4px">'+esc(st.sub)+'</div>'+
-    (pend?'<div style="margin-top:8px;color:#34D399"><b>Você tem '+pend+' reposição(ões) para agendar neste mês.</b> Veja na aba Reposições.</div>':'')+'</div>';
+    (pend?'<div style="margin-top:8px;color:#34D399"><b>Você tem '+pend+' reposição(ões) para agendar (prazo de 15 dias).</b> Veja na aba Reposições.</div>':'')+'</div>';
   h+=freqCard(a);
   h+=finCard(a);
   h+=regrasCard();
@@ -1796,8 +1873,8 @@ function loginView(){
     '<div class="btns" style="justify-content:center"><button class="b sm" onclick="signOutApp()">Sair da conta</button></div></div></div>';
 }
 
-/* ---------- reposições (calendário) ---------- */
-function calHTML(list,targetMonth){
+/* ---------- reposições (calendário + regra de 15 dias + swipe para ocultar) ---------- */
+function calHTML(list,maxDate){
   var m=ui.mon,t=hoje(),curM=mes(),f1=new Date(m.y,m.m,1),days=new Date(m.y,m.m+1,0).getDate(),off=f1.getDay();
   var monStr=m.y+'-'+pad(m.m+1);
   var disPrev=monStr<=curM;
@@ -1809,7 +1886,7 @@ function calHTML(list,targetMonth){
   for(var d=1;d<=days;d++){
     var ds=m.y+'-'+pad(m.m+1)+'-'+pad(d);
     var cls=(ds===t?' today':'')+(ds===ui.day?' sel':'');
-    var dis=ds<t||(!!targetMonth&&ds.slice(0,7)!==targetMonth);
+    var dis=ds<t||(!!maxDate&&ds>maxDate);
     h+='<button class="'+cls.trim()+'" '+(dis?'disabled ':'')+'onclick="pickDay(\''+ds+'\')" aria-label="'+d+' de '+MESES[m.m]+'">'+d+(hasRep[ds]?'<span class="dot"></span>':'')+'</button>';
   }
   return h+'</div></div>';
@@ -1828,56 +1905,152 @@ function repArea(aluno){
   if(!ui.mon){var n=new Date();ui.mon={y:n.getFullYear(),m:n.getMonth()}}
   if(!ui.day||ui.day<t)ui.day=t;
   ui.scope=aluno?aluno.id:null;
+
   var inScope=function(r){return isPres(al(r.a))&&(!aluno||r.a===aluno.id)};
-  var allPend=S.rep.filter(function(r){return isPendAtiva(r)&&inScope(r)});
-  var pend=aluno?allPend.filter(isRepValidaAluno):allPend;
-  var rawUnschedCount=aluno?S.rep.filter(function(r){return !r.data&&inScope(r)&&isPendAtiva(r)}).length:0;
-  var expiredCount=aluno?(rawUnschedCount-pend.length):0;
+  var rawPend=S.rep.filter(function(r){return isPendAtiva(r)&&inScope(r)});
+  var validPend=rawPend.filter(function(r){return repPrazo(r)>=t});
+  var expiredCount=aluno?(rawPend.length-validPend.length):0;
+  var pend=aluno?validPend:validPend.filter(function(r){return !(S.repDismissed&&S.repDismissed[r.id])});
+  var hiddenCount=aluno?0:(validPend.length-pend.length);
+
   var all=S.rep.filter(function(r){return r.data&&inScope(r)});
   var sch=all.filter(function(r){return r.data>=t}).sort(function(x,y){return x.data<y.data?-1:x.data>y.data?1:(x.h<y.h?-1:x.h>y.h?1:0)});
   if(ui.sel&&!pend.some(function(r){return r.id===ui.sel}))ui.sel=null;
+
   var pick=pickId(ui.scope);
   var pickObj=pick?pend.find(function(r){return r.id===pick}):null;
-  var targetMonth=aluno?(pickObj?repMesRef(pickObj):curM):null;
-  ui.maxMonth=aluno?pend.reduce(function(mx,r){var rm=repMesRef(r);return rm>mx?rm:mx},curM):null;
-  if(aluno&&targetMonth){
+
+  var maxDate=null;
+  if(aluno){
+    if(pickObj)maxDate=repPrazo(pickObj);
+    else if(pend.length)maxDate=pend.reduce(function(mx,r){var p=repPrazo(r);return p>mx?p:mx},t);
+    else maxDate=t;
+    ui.maxMonth=maxDate.slice(0,7);
+    if(ui.day>maxDate){
+      ui.day=t;
+      ui.mon={y:parseInt(curM.slice(0,4),10),m:parseInt(curM.slice(5,7),10)-1};
+    }
     var monStr=ui.mon.y+'-'+pad(ui.mon.m+1);
-    if(monStr<curM||(ui.maxMonth&&monStr>ui.maxMonth)){
-      ui.mon={y:parseInt(targetMonth.slice(0,4),10),m:parseInt(targetMonth.slice(5,7),10)-1};
+    if(monStr<curM||monStr>ui.maxMonth){
+      ui.mon={y:parseInt(curM.slice(0,4),10),m:parseInt(curM.slice(5,7),10)-1};
     }
-    if(ui.day.slice(0,7)!==targetMonth){
-      ui.day=(targetMonth===curM)?t:(targetMonth+'-01');
-      ui.mon={y:parseInt(targetMonth.slice(0,4),10),m:parseInt(targetMonth.slice(5,7),10)-1};
-    }
+  }else{
+    ui.maxMonth=null;
   }
+
   var slots=slotsFor(ui.day,aluno?12:0);
-  var outOfAllowedMonth=!!(aluno&&targetMonth&&ui.day.slice(0,7)!==targetMonth);
+  var outOfDeadline=!!(aluno&&pickObj&&ui.day>repPrazo(pickObj));
   var h=aluno?comoAgendarCard():'';
-  h+='<div class="card">'+calHTML(all,targetMonth)+'</div>';
-  h+='<div class="card"><div class="row"><b>Horários livres · '+fd(ui.day)+'</b>'+(aluno?'<span class="mut">Mín. 12h antes · mesmo mês</span>':'')+'</div>';
-  if(!pend.length)h+='<p class="mut" style="margin:8px 0 0">Nenhuma reposição pendente para agendar'+(aluno?' neste mês':'')+'.</p>';
+  h+='<div class="card">'+calHTML(all,maxDate)+'</div>';
+  h+='<div class="card"><div class="row"><b>Horários livres · '+fd(ui.day)+'</b>'+(aluno?'<span class="mut">Mín. 12h antes · prazo 15d</span>':'')+'</div>';
+  if(!pend.length)h+='<p class="mut" style="margin:8px 0 0">Nenhuma reposição pendente para agendar'+(aluno?' dentro do prazo de 15 dias':'')+'.</p>';
   else if(!pick)h+='<p class="mut" style="margin:8px 0 0">Escolha abaixo a reposição que vai agendar.</p>';
-  if(outOfAllowedMonth){
-    h+='<div class="slots" style="margin-top:10px"><span class="mut">Agendamento permitido somente dentro do próprio mês do crédito (não acumula para o mês seguinte).</span></div>';
+  if(outOfDeadline){
+    h+='<div class="slots" style="margin-top:10px"><span class="mut">Este dia passa do prazo máximo de 15 dias (até '+dmy(repPrazo(pickObj))+').</span></div>';
   }else{
     h+='<div class="slots" style="margin-top:10px">'+(slots.length?slots.map(function(s){return '<button '+(pick?'':'disabled ')+'onclick="schedSlot(\''+s+'\')">'+s+'</button>'}).join(''):'<span class="mut">Sem horários livres neste dia'+(aluno?' (respeitando 12h de antecedência)':'')+'.</span>')+'</div>';
   }
   if(!aluno)h+='<div class="btns" style="margin-top:12px"><input id="rep-extra" type="time" aria-label="Horário extra"><button class="b sm" '+(pick?'':'disabled ')+'onclick="schedExtra()">Agendar em horário extra</button></div>';
   h+='</div>';
+
   if(pend.length){
-    h+='<h2 class="h">A agendar ('+pend.length+')</h2>'+pend.map(function(r){
-      var a=al(r.a),on=pick===r.id;
-      return '<div class="card"><div class="row"><b>'+(aluno?'Aula perdida':esc(a?a.nome:''))+'</b><span class="mut">'+(r.orig?'Falta em '+fd(r.orig):'')+'</span></div><div class="btns"><button class="b sm '+(on?'p':'')+'" onclick="selRep(\''+r.id+'\')">'+(on?'Selecionada':'Selecionar para agendar')+'</button></div></div>';
+    h+='<div class="row" style="margin:20px 2px 10px"><h2 class="h" style="margin:0">A agendar ('+pend.length+')</h2>'+(!aluno?'<span class="mut" style="font-size:12.5px">← Deslize para ocultar</span>':'')+'</div>';
+    h+=pend.map(function(r){
+      var a=al(r.a),on=pick===r.id,pz=repPrazo(r);
+      var meta=(r.orig?'Falta em '+fd(r.orig)+' · até '+dmy(pz).slice(0,5):'Validade de 15 dias');
+      var cardInner='<div class="row"><b>'+(aluno?'Aula perdida':esc(a?a.nome:''))+'</b><span class="mut">'+meta+'</span></div>'+
+        '<div class="btns"><button class="b sm '+(on?'p':'')+'" onclick="selRep(\''+r.id+'\')">'+(on?'Selecionada':'Selecionar para agendar')+'</button></div>';
+      if(aluno){
+        return '<div class="card">'+cardInner+'</div>';
+      }
+      return '<div class="swipe-wrap" data-rep-id="'+r.id+'">'+
+        '<div class="swipe-bg" aria-hidden="true"><span>Ocultar da tela</span></div>'+
+        '<div class="card swipe-fg">'+cardInner+'</div>'+
+      '</div>';
     }).join('');
   }
+  if(hiddenCount>0){
+    h+='<div style="text-align:center;margin:4px 0 12px"><span class="mut">'+hiddenCount+' oculto(s) da sua tela · </span><button type="button" class="b sm" onclick="restoreDismissedRep()">Mostrar novamente</button></div>';
+  }
   if(expiredCount>0){
-    h+='<div class="card"><span class="mut">'+expiredCount+' aula(s) em haver de mês(es) anterior(es) expiraram pela regra de não-cumulatividade mensal.</span></div>';
+    h+='<div class="card"><span class="mut">'+expiredCount+' aula(s) em haver expiraram após o prazo de 15 dias.</span></div>';
   }
   h+='<h2 class="h">Agendadas ('+sch.length+')</h2>'+(sch.length?sch.map(function(r){
     var a=al(r.a);
     return '<div class="card"><div class="row"><b>'+(aluno?'Minha reposição':esc(a?a.nome:''))+'</b><span class="tag rep">'+fd(r.data)+' às '+r.h+'</span></div><div class="btns"><button class="b sm" onclick="unsched(\''+r.id+'\')">Desmarcar</button></div></div>';
   }).join(''):'<div class="empty">Nada agendado.</div>');
   return h;
+}
+
+function attachSwipeHandlers(){
+  document.querySelectorAll('.swipe-wrap').forEach(function(wrap){
+    var fg=wrap.querySelector('.swipe-fg');
+    var bg=wrap.querySelector('.swipe-bg');
+    var repId=wrap.getAttribute('data-rep-id');
+    if(!fg||!bg||!repId)return;
+
+    var startX=0,startY=0,dx=0,dir=null,dragging=false;
+
+    function start(x,y){
+      startX=x;startY=y;dx=0;dir=null;dragging=true;
+      fg.style.transition='none';
+      bg.style.transition='none';
+    }
+    function move(x,y,ev){
+      if(!dragging)return;
+      var mx=x-startX,my=y-startY;
+      if(!dir){
+        if(Math.abs(mx)<8&&Math.abs(my)<8)return;
+        dir=(Math.abs(mx)>Math.abs(my)&&mx<0)?'h':'v';
+      }
+      if(dir==='v'){dragging=false;return}
+      if(ev&&ev.cancelable)ev.preventDefault();
+      dx=Math.min(0,mx);
+      fg.style.transform='translateX('+dx+'px)';
+      bg.style.opacity=String(Math.min(1,Math.abs(dx)/90));
+    }
+    function end(){
+      if(!dragging)return;
+      dragging=false;
+      if(dir!=='h')return;
+      if(dx<=-90){
+        fg.style.transition='transform .20s ease';
+        fg.style.transform='translateX(-110%)';
+        wrap.style.maxHeight=wrap.offsetHeight+'px';
+        requestAnimationFrame(function(){wrap.classList.add('removing')});
+        setTimeout(function(){dismissRepItem(repId)},220);
+      }else{
+        fg.style.transition='transform .24s cubic-bezier(.22,1,.36,1)';
+        bg.style.transition='opacity .24s ease';
+        fg.style.transform='translateX(0)';
+        bg.style.opacity='0';
+      }
+    }
+
+    fg.addEventListener('touchstart',function(e){
+      if(e.touches.length!==1)return;
+      start(e.touches[0].clientX,e.touches[0].clientY);
+    },{passive:true});
+    fg.addEventListener('touchmove',function(e){
+      if(!dragging||e.touches.length!==1)return;
+      move(e.touches[0].clientX,e.touches[0].clientY,e);
+    },{passive:false});
+    fg.addEventListener('touchend',end);
+    fg.addEventListener('touchcancel',end);
+
+    fg.addEventListener('mousedown',function(e){
+      if(e.button!==0||e.target.closest('button'))return;
+      start(e.clientX,e.clientY);
+      var onMove=function(ev){move(ev.clientX,ev.clientY,ev)};
+      var onUp=function(){
+        window.removeEventListener('mousemove',onMove);
+        window.removeEventListener('mouseup',onUp);
+        end();
+      };
+      window.addEventListener('mousemove',onMove);
+      window.addEventListener('mouseup',onUp);
+    });
+  });
 }
 
 /* ---------- telas do personal ---------- */
@@ -2154,6 +2327,8 @@ function render(){
   }else seg.hidden=true;
 
   app.innerHTML=ui.role==='p'?personalView():studentView();
+  if(ui.role==='p'&&ui.tab==='rep')attachSwipeHandlers();
+
   var showNav=ui.role==='p'||!!myAluno();
   nav.classList.toggle('many',showNav&&T.length>=5);
   nav.innerHTML=showNav?T.map(function(x){
@@ -2239,10 +2414,8 @@ async function refreshAll(){
   if(isRefreshing){refreshQueued=true;return}
   isRefreshing=true;
   try{
-    // Verifica se o usuário logado é um Personal Trainer
     var perRes=await sb.from('personais').select('user_id,nome_profissional,whatsapp,pix_key,piloto_ate,ativo,is_super_admin').eq('user_id',UID).maybeSingle();
 
-    // Fallback de onboarding caso o usuário tenha confirmado e-mail após o signUp como personal
     if(!perRes.data){
       try{
         var pendPers=localStorage.getItem('diario_pending_personal');
@@ -2265,6 +2438,12 @@ async function refreshAll(){
     ui.role=OWNER?'p':'a';
     S.perfil=perRes.data||null;
 
+    if(OWNER){
+      S.repDismissed=loadRepDismissed();
+    }else{
+      S.repDismissed={};
+    }
+
     var vincRes=await sb.from('vinculos').select('user_id,aluno_id,personal_id').eq(OWNER?'personal_id':'user_id',UID);
     S.vinc={};
     var myPersonalId=OWNER?UID:null;
@@ -2274,7 +2453,6 @@ async function refreshAll(){
     });
     S.personalId=myPersonalId;
 
-    // Se for aluno vinculado, carrega os dados públicos do SEU Personal (nome, WhatsApp e Pix)
     if(!OWNER&&myPersonalId){
       var pStuRes=await sb.from('personais').select('user_id,nome_profissional,whatsapp,pix_key,piloto_ate,ativo').eq('user_id',myPersonalId).maybeSingle();
       S.perfil=pStuRes.data||null;
