@@ -865,7 +865,14 @@ function isOnl(a){return !!a&&a.tipo==='online'}
 function mes(){return hoje().slice(0,7)}
 function prevMes(){var d=new Date(),p=new Date(d.getFullYear(),d.getMonth()-1,1);return p.getFullYear()+'-'+pad(p.getMonth()+1)}
 function repMesRef(r){return (r&&r.orig)?String(r.orig).slice(0,7):mes()}
-function isRepValidaAluno(r){return !!r&&!r.data&&repMesRef(r)>=mes()}
+function isPendAtiva(r){
+  if(!r||r.data)return false;
+  if(!r.orig)return true;
+  if(r.origH)return S.reg[r.a+'|'+r.orig+'|'+r.origH]==='j';
+  var pref=r.a+'|'+r.orig+'|';
+  return Object.keys(S.reg).some(function(k){return k.indexOf(pref)===0&&S.reg[k]==='j'});
+}
+function isRepValidaAluno(r){return isPendAtiva(r)&&repMesRef(r)>=mes()}
 function telOf(a){return S.tel[a.id]||''}
 function codeOf(a){return S.codigos[a.id]||''}
 function firstName(a){return String(a&&a.nome?a.nome:'').split(' ')[0]}
@@ -1027,7 +1034,7 @@ function slotsFor(date,minHours){
 }
 function pickId(aid){
   var pend=S.rep.filter(function(r){
-    if(r.data||!isPres(al(r.a)))return false;
+    if(!isPendAtiva(r)||!isPres(al(r.a)))return false;
     if(aid&&(r.a!==aid||!isRepValidaAluno(r)))return false;
     return true;
   });
@@ -1822,9 +1829,10 @@ function repArea(aluno){
   if(!ui.day||ui.day<t)ui.day=t;
   ui.scope=aluno?aluno.id:null;
   var inScope=function(r){return isPres(al(r.a))&&(!aluno||r.a===aluno.id)};
-  var allPend=S.rep.filter(function(r){return !r.data&&inScope(r)});
+  var allPend=S.rep.filter(function(r){return isPendAtiva(r)&&inScope(r)});
   var pend=aluno?allPend.filter(isRepValidaAluno):allPend;
-  var expiredCount=aluno?(allPend.length-pend.length):0;
+  var rawUnschedCount=aluno?S.rep.filter(function(r){return !r.data&&inScope(r)&&isPendAtiva(r)}).length:0;
+  var expiredCount=aluno?(rawUnschedCount-pend.length):0;
   var all=S.rep.filter(function(r){return r.data&&inScope(r)});
   var sch=all.filter(function(r){return r.data>=t}).sort(function(x,y){return x.data<y.data?-1:x.data>y.data?1:(x.h<y.h?-1:x.h>y.h?1:0)});
   if(ui.sel&&!pend.some(function(r){return r.id===ui.sel}))ui.sel=null;
@@ -2314,7 +2322,7 @@ async function refreshAll(){
 
     var repRes=await sb.from('reposicoes').select('id,aluno_id,falta_data,falta_hora,data,hora').eq(childCol,childVal);
     S.rep=(repRes.data||[]).map(function(r){
-      return {id:r.id,a:r.aluno_id,orig:r.falta_data,data:r.data||null,h:r.hora?normTime(r.hora):null};
+      return {id:r.id,a:r.aluno_id,orig:r.falta_data,origH:r.falta_hora?normTime(r.falta_hora):null,data:r.data||null,h:r.hora?normTime(r.hora):null};
     });
 
     var presRes=await sb.from('presencas').select('aluno_id,data,hora,status,is_reposicao').eq(childCol,childVal);
